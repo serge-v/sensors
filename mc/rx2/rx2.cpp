@@ -1,3 +1,4 @@
+#include <avr/io.h>
 #include <JeeLib.h>
 
 #define myNodeID 30          //node ID of Rx (range 0-30) 
