@@ -5,6 +5,12 @@
 const int led_pin = 7;
 
 int test = 0;
+byte c1 = 0, c2 = 0;
+byte wait_irq = 1;
+byte buf[10];
+byte idx = 0;
+int total_chars = 0;
+
 
 void setup()
 {
@@ -17,13 +23,6 @@ void setup()
 	Serial.println("t1 -- jeelib rx test");
 	Serial.println("t2 -- my rx test");
 }
-
-
-byte c1 = 0, c2 = 0;
-byte wait_irq = 1;
-byte buf[10];
-byte idx = 0;
-int total_chars = 0;
 
 /*
 
@@ -115,32 +114,44 @@ static void send_command()
 static void dump()
 {
 	Serial.print("PORTB: ");
-	Serial.println(PORTB, HEX);
+	Serial.print(PORTB, HEX);
+	Serial.println(PORTB, BIN);
 	Serial.print("DDRB: ");
-	Serial.println(DDRB, HEX);
+	Serial.print(DDRB, HEX);
+	Serial.println(DDRB, BIN);
 	Serial.print("PINB: ");
-	Serial.println(PINB, HEX);
+	Serial.print(PINB, HEX);
+	Serial.println(PINB, BIN);
 
 	Serial.print("PORTC: ");
-	Serial.println(PORTC, HEX);
+	Serial.print(PORTC, HEX);
+	Serial.println(PORTC, BIN);
 	Serial.print("DDRC: ");
-	Serial.println(DDRC, HEX);
+	Serial.print(DDRC, HEX);
+	Serial.println(DDRC, BIN);
 	Serial.print("PINC: ");
-	Serial.println(PINC, HEX);
+	Serial.print(PINC, HEX);
+	Serial.println(PINC, BIN);
 
 	Serial.print("PORTD: ");
-	Serial.println(PORTD, HEX);
+	Serial.print(PORTD, HEX);
+	Serial.println(PORTD, BIN);
 	Serial.print("DDRD: ");
-	Serial.println(DDRD, HEX);
+	Serial.print(DDRD, HEX);
+	Serial.println(DDRD, BIN);
 	Serial.print("PIND: ");
-	Serial.println(PIND, HEX);
+	Serial.print(PIND, HEX);
+	Serial.println(PIND, BIN);
 
 	Serial.print("SPCR: ");
-	Serial.println(SPCR, HEX);
+	Serial.print(SPCR, HEX);
+	Serial.println(SPCR, BIN);
 	Serial.print("SPSR: ");
-	Serial.println(SPSR, HEX);
+	Serial.print(SPSR, HEX);
+	Serial.println(SPSR, BIN);
 	Serial.print("EIMSK: ");
-	Serial.println(EIMSK, HEX);
+	Serial.print(EIMSK, HEX);
+	Serial.println(EIMSK, BIN);
 	Serial.print("wait_irq: ");
 	Serial.println(wait_irq);
 
@@ -150,6 +161,7 @@ static void dump()
 		Serial.print(buf[i], HEX);
 		Serial.print(' ');
 	}
+
 	Serial.print(" idx: ");
 	Serial.println(idx);
 	Serial.print("chars: ");
@@ -213,22 +225,28 @@ void loop()
 	{
 		delay(100);
 		char c = Serial.read();
-		if (c == 't')
-			setup_test();
-		else if (c == 'c')
-			read_command(&c1, &c2);
-		else if (c == 's')
-			send_command();
-		else if (c == 'w')
-			wipe();
-		else if (c == 'q')
+		switch (c)
 		{
+		case 't':
+			setup_test();
+			break;
+		case 'c':
+			read_command(&c1, &c2);
+			break;
+		case 's':
+			send_command();
+			break;
+		case 'w':
+			wipe();
+			break;
+		case 'q':
 			wait_irq = !wait_irq;
-		}
-		else if (c == 'd')
+			break;
+		case 'd':
 			dump();
-		else if (c == 'p')
+		case 'p':
 			rf12_spi_init();
+		}
 	}
 
 	if (test == 2)
