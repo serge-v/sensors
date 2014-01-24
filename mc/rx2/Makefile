@@ -2,7 +2,8 @@ PORT = /dev/ttyACM0
 TARGET = rx2
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 
-SRC = $(ARDUINO)/wiring.c \
+SRC = trx.c \
+    $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
     $(ARDUINO)/WInterrupts.c
 
@@ -41,15 +42,15 @@ CXXINCS = -I$(ARDUINO)
 # gnu89 - c89 plus GCC extensions
 # c99   - ISO C99 standard (not yet fully implemented)
 # gnu99 - c99 plus GCC extensions
-CSTANDARD = -std=gnu99
+CSTANDARD = -std=gnu99 -Wstrict-prototypes
 #CDEBUG = -g$(DEBUG)
-CWARN = -Wall -Wstrict-prototypes
+CWARN = -Wall
 CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 
 CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
 CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) -ffunction-sections -fdata-sections
-#ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
+#ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs
 LDFLAGS = -Wl,--gc-sections
 
 
@@ -92,10 +93,10 @@ build: elf hex eep
 elf: $(TARGET).elf
 hex: $(TARGET).hex
 eep: $(TARGET).eep
-lss: $(TARGET).lss 
+lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-# Program the device.  
+# Program the device.
 upload: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
@@ -108,7 +109,7 @@ COFFCONVERT=$(OBJCOPY) --debugging \
 --change-section-address .data-0x800000 \
 --change-section-address .bss-0x800000 \
 --change-section-address .noinit-0x800000 \
---change-section-address .eeprom-0x810000 
+--change-section-address .eeprom-0x810000
 
 
 coff: $(TARGET).elf
@@ -145,17 +146,22 @@ $(TARGET).elf: $(OBJ)
 
 # Compile: create object files from C++ source files.
 %.o: $(ARDUINO)/%.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
 %.o: %.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
 # Compile: create object files from C source files.
 %.o: $(ARDUINO)/%.c
 	$(CC) -c $(ALL_CFLAGS) $< -o $@
 
+%.o: %.c
+	$(CC) -c $(ALL_CFLAGS) $< -o $@
 
 # Compile: create assembler files from C source files.
+.cpp.s:
+	$(CC) -S $(ALL_CFLAGS) $< -o $@
+
 .c.s:
 	$(CC) -S $(ALL_CFLAGS) $< -o $@
 
