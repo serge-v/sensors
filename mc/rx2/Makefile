@@ -1,7 +1,6 @@
-PORT = /dev/tty.usbserial*
+PORT = /dev/ttyACM0
 TARGET = rx2
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-JEELIB = $(HOME)/srcr/jeelib
 
 SRC = $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
@@ -12,13 +11,12 @@ CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
     $(ARDUINO)/Stream.cpp \
-    $(ARDUINO)/WString.cpp \
-    $(JEELIB)/RF12.cpp
+    $(ARDUINO)/WString.cpp
 
 MCU = atmega328p
 F_CPU = 16000000
 FORMAT = ihex
-UPLOAD_RATE = 19200
+UPLOAD_RATE = 115200
 
 # Name of this Makefile (used for "make depend").
 MAKEFILE = Makefile
@@ -35,7 +33,7 @@ CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
 CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
 
 # Place -I options here
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(HOME)/srcr/jeelib
+CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
 CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
@@ -50,16 +48,16 @@ CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 
 CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
-CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT) -ffunction-sections -fdata-sections
+CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) -ffunction-sections -fdata-sections
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
 LDFLAGS = -Wl,--gc-sections
 
 
 # Programming support using avrdude. Settings and variables.
-AVRDUDE_PROGRAMMER = stk500
+AVRDUDE_PROGRAMMER = arduino
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
+AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
   -b $(UPLOAD_RATE)
 
 # Program settings
@@ -99,9 +97,10 @@ sym: $(TARGET).sym
 
 # Program the device.  
 upload: $(TARGET).hex $(TARGET).eep
+	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
-
-
+#	sleep 2
+#	echo d > $(AVRDUDE_PORT)
 
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
@@ -146,9 +145,6 @@ $(TARGET).elf: $(OBJ)
 
 # Compile: create object files from C++ source files.
 %.o: $(ARDUINO)/%.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 
-
-%.o: $(JEELIB)/%.cpp
 	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 
 
 %.o: %.cpp
