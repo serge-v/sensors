@@ -58,7 +58,7 @@ static void test1()
 static void dot()
 {
   digitalWrite(7, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(100);               // wait for a second
+  delay(50);               // wait for a second
   digitalWrite(7, LOW);    // turn the LED off by making the voltage LOW
   delay(100); 
 }
@@ -76,19 +76,12 @@ static void RF12_NOT_CS()
 static byte wait_nirq()
 {
   int cnt = 32000;
-  
-  while (--cnt)
-  {
-    byte c = digitalRead(RFM_IRQ);
-    if (c == 0)
-      return 1;
-  }
-  
-//  while(!(PORTD & _BV(PD2)) && --cnt);
+
+  while((PORTD & _BV(PD2)) && --cnt);
    
   if (cnt == 0)
   {
-    Serial.println("tout2");
+    dot();
     return 0;
   }
    
@@ -98,26 +91,14 @@ static byte wait_nirq()
 static byte rf12_read_status()
 {
     RF12_CS();
-    SPDR = 0x00;	//Status Read Command
+    SPDR = 0x00;
     while (!(SPSR & _BV(SPIF)));
     byte c1 = SPDR;
-    SPDR = 0x00; 	//Status Read Command
+    SPDR = 0x00;
     while (!(SPSR & _BV(SPIF)));
     byte c2 = SPDR;
     RF12_NOT_CS();
-
-//    Serial.print(" status: "); 
-//    Serial.print(c1, HEX);
-//    Serial.print(" ");
-//    Serial.println(c2, HEX);
     return c1;
-}
-
-static uint8_t rf12_byte (uint8_t out)
-{
-    SPDR = out;
-    while (!(SPSR & _BV(SPIF)));
-    return SPDR;
 }
 
 static uint8_t rf12_rx_slow()
@@ -161,19 +142,10 @@ static byte rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
     return SPDR;
 }
 
-//#define RF12_LOW_BAT_AND_CLK_DIV 0xC0
-//#define RF12_LOW(v)	(v)
-//#define RF12_DIV(v) (v<<5)
-//#define RF12_CLOCK_OUTPUT 3
-//#define RF12_FIFO_RESET 0xCA
-//#define RF12_FIFO_IT_LEVEL(bits) (bits<<4)
-//#define RF12_FIFO_FILL(bit) (bit<<2)
-//#define RF12_DUTY_CYCLE(r0) (0xC8 | r0)
-//#define RF12_DR _BV(0)		//Disables the highly sensitive RESET mode.
-
 static void setup2()
 {
   detachInterrupt(0); // cancel jeelib int0 interrupt
+  bitSet(PORTD, RFM_IRQ);
 }
 
 byte c1 = 0, c2 = 0;
@@ -236,7 +208,8 @@ static void spi_init()
   SPCR = _BV(SPE) | _BV(MSTR);
   // use clk/2 (2x 1/4th) for sending (and clk/8 for recv, see rf12_xferSlow)
   SPSR |= _BV(SPI2X);
-  pinMode(RFM_IRQ, INPUT_PULLUP);
+  pinMode(RFM_IRQ, INPUT);
+  digitalWrite(RFM_IRQ, 1); // pull-up
 }
 
 static void send_command()
@@ -324,6 +297,7 @@ void loop() {
       Serial.print("PORTD: "); Serial.println(PORTD, HEX);
       Serial.print("SPCR: ");  Serial.println(SPCR, HEX);
       Serial.print("SPSR: ");  Serial.println(SPSR, HEX);
+      Serial.print("EIMSK: ");  Serial.println(EIMSK, HEX);
       Serial.print("wait_irq: "); Serial.println(wait_irq);
     }
     else if (c == 'p')
