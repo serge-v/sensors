@@ -145,22 +145,22 @@ static void setup2()
 	spi_init();
 	rf12_cmd(0, 0);
 	rf12_cmd(0x82, 0x05);
-	rf12_cmd(0x80, 0xD8); // EL (ena TX), EF (ena RX FIFO), 12.0pF
+	rf12_cmd(0x80, 0xD8); // EL (ena TX), EF (ena RX FIFO), 12.0pF // m: 80D7
 	rf12_cmd(0xA6, 0x40); // 433.26MHz
 	rf12_cmd(0xC6, 0x06); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
 	rf12_cmd(0x94, 0xA2); // VDI,FAST,134kHz,0dBm,-91dBm
 	rf12_cmd(0xC2, 0xAC); // AL,!ml,DIG,DQD4
-	rf12_cmd(0xCA, 0x83); // FIFO8,2-SYNC,!ff,DR
+	rf12_cmd(0xCA, 0x83); // FIFO8,2-SYNC,!ff,DR. CA81
 	rf12_cmd(0xCE, 0xd4); // SYNC=2DXX
 	rf12_cmd(0xC4, 0x83); // @PWR,NO RSTRIC,!st,!fi,OE,EN
 	rf12_cmd(0x98, 0x50); // !mp,90kHz,MAX OUT
-	rf12_cmd(0xCC, 0x77); // OB1,OB0, LPX,!ddy,DDIT,BW0
+	rf12_cmd(0xCC, 0x77); // OB1,OB0, LPX,!ddy,DDIT,BW0. CC67
 	rf12_cmd(0xE0, 0x00); // NOT USE
 	rf12_cmd(0xC8, 0x00); // NOT USE
-	rf12_cmd(0xC0, 0x49); // 1.66MHz,3.1V
+	rf12_cmd(0xC0, 0x49); // 1.66MHz,3.1V  -- change V
 	rf12_cmd(0xCA, 0x81); // clear ef bit
 	rf12_cmd(0xCA, 0x83); // set ef bit
-	rf12_cmd(0x82, 0xDD); // receiver on
+	rf12_cmd(0x82, 0xDD); // receiver on. 8239
 }
 
 byte c1 = 0, c2 = 0;
@@ -168,6 +168,30 @@ byte wait_irq = 1;
 byte buf[20];
 byte idx = 0;
 int total_chars = 0;
+
+/*
+
+- After switching nIRQ POR goes low due to, and / or EXT IRQ
+ - Read the status from the Init of the RFM at the end deletes the IRQ
+
+ - Send: after the last byte has been sent to the RFM, immediately 
+ et = 0.  Otherwise RGIT IRQ is active again and nIRQ low.  This can 
+ are not cleared by reading the status, only by transmitting a 
+ Bytes in the TX buffer.  Is of course only when the TX buffer used 
+ will.
+
+ - Receive: after the last byte has been retrieved from the FIFO immediately 
+ Off or run FIFO FIFO reset.  Otherwise, the FFIT IRQ 
+ set and nIRQ is low.  This can only be read out of the FIFO 
+ be deleted.
+ Once the FIFO has even recognized the sync bytes, it also provides no 
+ active transmitter or data (random values).  Due to the FIFO is reset 
+ again waiting for sync byte
+
+ - Wake-up timer: Reading the register clears the congestion WKUP IRQ and nIRQ 
+ is high again 
+ 
+*/
 
 static void test2()
 {
