@@ -16,7 +16,6 @@ extern "C" {
 #define RF12_UNSELECT (PORTB |= _BV(PB2))
 
 void dot(void);
-uint16_t crc16_update(uint16_t crc, uint8_t a);
 
 uint8_t rf12_wait_nirq(void);
 uint16_t rf12_read_status(void);

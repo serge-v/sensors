@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <util/crc16.h>
 #include <Arduino.h>
 #include "trx.h"
 
@@ -10,84 +11,117 @@ byte wait_irq = 1;
 byte buf[10];
 byte idx = 0;
 int total_chars = 0;
+byte debug = 0;
 
 
 void setup()
 {
 	pinMode(led_pin, OUTPUT);
-	Serial.begin(9600);
+	Serial.begin(115200);
+	// wait for init
 	while (!Serial);
+	// wait for any characted from usb. Otherwise "cat /dev/ttyACM0" doesn't work.
 	while (!Serial.available());
 	Serial.read();
-	Serial.println("rx2:");
-	Serial.println("t1 -- jeelib rx test");
-	Serial.println("t2 -- my rx test");
+	Serial.println("started");
 }
 
-/*
+uint16_t rf12_read_fifo()
+{
+	bitSet(SPCR, SPR0);
+	RF12_SELECT;
 
-- After switching nIRQ POR goes low due to, and / or EXT IRQ
- - Read the status from the Init of the RFM at the end deletes the IRQ
+	SPDR = 0x00;
+	while (!(SPSR & _BV(SPIF)));
+	if (debug)
+	{
+		Serial.print("f1: ");
+		Serial.println(SPDR, HEX);
+	}
+	SPDR = 0x00;
+	while (!(SPSR & _BV(SPIF)));
+	if (debug)
+	{
+		Serial.print("f2: ");
+		Serial.println(SPDR, HEX);
+	}
 
- - Send: after the last byte has been sent to the RFM, immediately
- et = 0.  Otherwise RGIT IRQ is active again and nIRQ low.  This can
- are not cleared by reading the status, only by transmitting a
- Bytes in the TX buffer.  Is of course only when the TX buffer used
- will.
+	SPDR = 0x00;
+	while (!(SPSR & _BV(SPIF)));
+	byte c = SPDR;
 
- - Receive: after the last byte has been retrieved from the FIFO immediately
- Off or run FIFO FIFO reset.  Otherwise, the FFIT IRQ
- set and nIRQ is low.  This can only be read out of the FIFO
- be deleted.
- Once the FIFO has even recognized the sync bytes, it also provides no
- active transmitter or data (random values).  Due to the FIFO is reset
- again waiting for sync byte
+	if (debug)
+	{
+		Serial.print("f3: ");
+		Serial.println(c, HEX);
+	}
 
- - Wake-up timer: Reading the register clears the congestion WKUP IRQ and nIRQ
- is high again
+	RF12_UNSELECT;
+	bitClear(SPCR, SPR0);
 
-*/
+	return c;
+}
+
 
 static void test2()
 {
-	if (wait_irq)
-	{
-		if (!rf12_wait_nirq())
-			return;
-	}
+	while (PIND & _BV(PD2));
 
 	uint16_t c = rf12_read_status();
 
 	if ((c & 0x8000) == 0)
+	{
+		if (debug)
+		{
+			Serial.print("bad status:");
+			Serial.println(c, HEX);
+		}
 		return;
+	}
 
-	idx = 0;
+	if (debug)
+	{
+		Serial.print("status:");
+		Serial.println(c, HEX);
+	}
 
-	while ((PIND & _BV(PD2)) && idx < 5)
+	while (!(PIND & _BV(PD2)) && idx < 5)
 	{
 		buf[idx++] = rf12_rx_slow();
 		total_chars++;
 	}
 
-	rf12_reset_fifo();
-
-	uint16_t crc = 0xFFFF;
-	if (idx == 5 && buf[0] == 'A' && buf[1] == 1)
+	if (idx == 5 && buf[0] == 0xA && buf[1] == 1)
 	{
-		crc = crc16_update(crc, buf[3]);
-		crc = crc16_update(crc, buf[4]);
-		Serial.print("c: ");
-		Serial.println(buf[2]); // data
-	}
-	else
-	{
-		Serial.print("bad: ");
-		for (int i = 0; i < 10; i++)
+		uint8_t len = buf[1];
+		uint16_t crc = ~0;
+		crc = _crc16_update(crc, 212);
+		crc = _crc16_update(crc, buf[0]);
+		crc = _crc16_update(crc, len);
+		crc = _crc16_update(crc, buf[2]);
+		Serial.print("buf: ");
+		for (int i = 0; i < 5; i++)
 		{
-			Serial.print(' ');
-			Serial.print(buf[i]);
+			Serial.print(" ");
+			Serial.print(buf[i], HEX);
 		}
-		Serial.println();
+		uint16_t expected_crc = *(uint16_t*)(buf + len + 2);
+		if (expected_crc == crc)
+		{
+			Serial.println(" : ok");
+			dot();
+		}
+		else
+		{
+			Serial.print(" crc error: ");
+			Serial.print(expected_crc, HEX);
+			Serial.print(" != ");
+			Serial.println(crc, HEX);
+			dot();
+			dot();
+		}
+		idx = 0;
+		rf12_reset_fifo();
 	}
 }
 
@@ -115,42 +149,54 @@ static void dump()
 {
 	Serial.print("PORTB: ");
 	Serial.print(PORTB, HEX);
+	Serial.print("  ");
 	Serial.println(PORTB, BIN);
 	Serial.print("DDRB: ");
 	Serial.print(DDRB, HEX);
+	Serial.print("  ");
 	Serial.println(DDRB, BIN);
 	Serial.print("PINB: ");
 	Serial.print(PINB, HEX);
+	Serial.print("  ");
 	Serial.println(PINB, BIN);
 
 	Serial.print("PORTC: ");
 	Serial.print(PORTC, HEX);
+	Serial.print("  ");
 	Serial.println(PORTC, BIN);
 	Serial.print("DDRC: ");
 	Serial.print(DDRC, HEX);
+	Serial.print("  ");
 	Serial.println(DDRC, BIN);
 	Serial.print("PINC: ");
 	Serial.print(PINC, HEX);
+	Serial.print("  ");
 	Serial.println(PINC, BIN);
 
 	Serial.print("PORTD: ");
 	Serial.print(PORTD, HEX);
+	Serial.print("  ");
 	Serial.println(PORTD, BIN);
 	Serial.print("DDRD: ");
 	Serial.print(DDRD, HEX);
+	Serial.print("  ");
 	Serial.println(DDRD, BIN);
 	Serial.print("PIND: ");
 	Serial.print(PIND, HEX);
+	Serial.print("  ");
 	Serial.println(PIND, BIN);
 
 	Serial.print("SPCR: ");
 	Serial.print(SPCR, HEX);
+	Serial.print("  ");
 	Serial.println(SPCR, BIN);
 	Serial.print("SPSR: ");
 	Serial.print(SPSR, HEX);
+	Serial.print("  ");
 	Serial.println(SPSR, BIN);
 	Serial.print("EIMSK: ");
 	Serial.print(EIMSK, HEX);
+	Serial.print("  ");
 	Serial.println(EIMSK, BIN);
 	Serial.print("wait_irq: ");
 	Serial.println(wait_irq);
@@ -241,6 +287,9 @@ void loop()
 			break;
 		case 'q':
 			wait_irq = !wait_irq;
+			break;
+		case 'g':
+			debug = !debug;
 			break;
 		case 'd':
 			dump();

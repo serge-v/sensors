@@ -17,22 +17,6 @@ uint8_t rf12_wait_nirq()
 	return (cnt != 0);
 }
 
-uint16_t crc16_update(uint16_t crc, uint8_t a)
-{
-	int i;
-
-	crc ^= a;
-	for (i = 0; i < 8; ++i)
-	{
-		if (crc & 1)
-			crc = (crc >> 1) ^ 0xA001;
-		else
-			crc = (crc >> 1);
-	}
-
-	return crc;
-}
-
 uint16_t rf12_read_status()
 {
 	RF12_SELECT;
@@ -56,8 +40,8 @@ uint8_t rf12_rx_slow()
 	while (!(SPSR & _BV(SPIF)));
 	SPDR = 0x00;
 	while (!(SPSR & _BV(SPIF)));
+	byte c = SPDR;
 	RF12_UNSELECT;
-	char c = SPDR;
 
 	bitClear(SPCR, SPR0);
 
@@ -71,8 +55,9 @@ uint8_t rf12_rx()
 	while (!(SPSR & _BV(SPIF)));
 	SPDR = 0x00;
 	while (!(SPSR & _BV(SPIF)));
+	byte c = SPDR;
 	RF12_UNSELECT;
-	return SPDR;
+	return c;
 }
 
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
@@ -105,7 +90,7 @@ void rf12_spi_init()
 
 void rf12_reset_fifo()
 {
-	rf12_cmd(0xCA, 0x81); // clear ef bit
+	rf12_cmd(0xCA, 0x80); // clear ef bit
 	rf12_cmd(0xCA, 0x83); // set ef bit
 }
 
