@@ -12,6 +12,7 @@ byte buf[10];
 byte idx = 0;
 int total_chars = 0;
 byte debug = 0;
+byte spins = 0;
 
 
 void setup()
@@ -25,43 +26,6 @@ void setup()
 	Serial.read();
 	Serial.println("started");
 }
-
-uint16_t rf12_read_fifo()
-{
-	bitSet(SPCR, SPR0);
-	RF12_SELECT;
-
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	if (debug)
-	{
-		Serial.print("f1: ");
-		Serial.println(SPDR, HEX);
-	}
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	if (debug)
-	{
-		Serial.print("f2: ");
-		Serial.println(SPDR, HEX);
-	}
-
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	byte c = SPDR;
-
-	if (debug)
-	{
-		Serial.print("f3: ");
-		Serial.println(c, HEX);
-	}
-
-	RF12_UNSELECT;
-	bitClear(SPCR, SPR0);
-
-	return c;
-}
-
 
 static void test2()
 {
@@ -120,7 +84,14 @@ static void test2()
 			dot();
 			dot();
 		}
-		idx = 0;
+		idx = spins = 0;
+		rf12_reset_fifo();
+	}
+	
+	spins++;
+	if (spins > 100)
+	{
+		idx = spins = 0;
 		rf12_reset_fifo();
 	}
 }
@@ -198,8 +169,8 @@ static void dump()
 	Serial.print(EIMSK, HEX);
 	Serial.print("  ");
 	Serial.println(EIMSK, BIN);
-	Serial.print("wait_irq: ");
-	Serial.println(wait_irq);
+	Serial.print("irq: ");
+	Serial.println(PIND & _BV(PD2));
 
 	Serial.print("buf: ");
 	for (int i = 0; i < 10; i++)
