@@ -5,7 +5,7 @@
 
 const int led_pin = 7;
 
-int test = 0;
+int test = 2;
 byte c1 = 0, c2 = 0;
 byte wait_irq = 1;
 byte buf[10];
@@ -22,14 +22,37 @@ void setup()
 	// wait for init
 	while (!Serial);
 	// wait for any characted from usb. Otherwise "cat /dev/ttyACM0" doesn't work.
-	while (!Serial.available());
-	Serial.read();
+//	while (!Serial.available());
+//	Serial.read();
 	Serial.println("started");
+}
+
+// buffer format:
+// [0]            : group
+// [1]            : len
+// [2]..[len-3]   : data
+// [len-2][len-1] : crc
+
+static uint8_t verify_buf(uint8_t group, uint8_t* buf, uint8_t buflen)
+{
+	if (buflen < 5)
+		return 0;
+
+	uint8_t len = buf[1];
+	uint16_t crc = ~0;
+	crc = _crc16_update(crc, group);
+	crc = _crc16_update(crc, buf[0]); // network id
+	crc = _crc16_update(crc, len);
+	for (int i = 2; i < len - 3; i++)
+		crc = _crc16_update(crc, buf[i]);
+
+	uint16_t expected_crc = *(uint16_t*)(buf + len + 2);
+	return (expected_crc == crc);
 }
 
 static void test2()
 {
-	while (PIND & _BV(PD2));
+	while (IRQ_HI);
 
 	uint16_t c = rf12_read_status();
 
@@ -49,7 +72,7 @@ static void test2()
 		Serial.println(c, HEX);
 	}
 
-	while (!(PIND & _BV(PD2)) && idx < 5)
+	while (!IRQ_HI && idx < 5)
 	{
 		buf[idx++] = rf12_rx_slow();
 		total_chars++;
@@ -57,30 +80,14 @@ static void test2()
 
 	if (idx == 5 && buf[0] == 0xA && buf[1] == 1)
 	{
-		uint8_t len = buf[1];
-		uint16_t crc = ~0;
-		crc = _crc16_update(crc, 212);
-		crc = _crc16_update(crc, buf[0]);
-		crc = _crc16_update(crc, len);
-		crc = _crc16_update(crc, buf[2]);
-		Serial.print("buf: ");
-		for (int i = 0; i < 5; i++)
+		if (verify_buf(212, buf, 5))
 		{
-			Serial.print(" ");
-			Serial.print(buf[i], HEX);
-		}
-		uint16_t expected_crc = *(uint16_t*)(buf + len + 2);
-		if (expected_crc == crc)
-		{
-			Serial.println(" : ok");
+			Serial.println((char)buf[2]);
 			dot();
 		}
 		else
 		{
-			Serial.print(" crc error: ");
-			Serial.print(expected_crc, HEX);
-			Serial.print(" != ");
-			Serial.println(crc, HEX);
+			Serial.println(" crc error");
 			dot();
 			dot();
 		}

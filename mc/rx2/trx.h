@@ -14,6 +14,7 @@ extern "C" {
 
 #define RF12_SELECT   (PORTB &= ~_BV(PB2))
 #define RF12_UNSELECT (PORTB |= _BV(PB2))
+#define IRQ_HI (PIND & _BV(PD2))
 
 void dot(void);
 

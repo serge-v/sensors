@@ -96,7 +96,11 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-# Program the device.
+
+#fuses:
+#	$(AVRDUDE) -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
+#	-U lfuse:r:-:h -U hfuse:r:-:h -U efuse:r:-:h -U lock:r:-:h
+
 upload: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
