@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include "trx.h"
 
+#define RF12_SELECT   (SELECT_PORT &= ~_BV(SELECT_PIN))
+#define RF12_UNSELECT (SELECT_PORT |= _BV(SELECT_PIN))
+
 void dot()
 {
 	digitalWrite(7, HIGH);
@@ -13,49 +16,63 @@ void dot()
 uint8_t rf12_wait_nirq()
 {
 	unsigned int cnt = 0xFFFF;
-	while ((PIND & _BV(PD2)) && --cnt);
+	while ((IRQ_PORT & _BV(IRQ_PIN)) && --cnt);
 	return (cnt != 0);
+}
+
+static uint8_t rf12_byte(uint8_t c)
+{
+#ifdef SPDR
+	SPDR = c;
+	while (!(SPSR & _BV(SPIF)));
+	return SPDR;
+#else
+	USIDR = c;
+	byte v1 = bit(USIWM0) | bit(USITC);
+	byte v2 = bit(USIWM0) | bit(USITC) | bit(USICLK);
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	USICR = v1; USICR = v2;
+	return USIDR;
+#endif
 }
 
 uint16_t rf12_read_status()
 {
 	RF12_SELECT;
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	uint16_t c = SPDR << 8;
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	c |= SPDR;
+	uint16_t c = rf12_byte(0x00) << 8;
+	c |= rf12_byte(0x00);
 	RF12_UNSELECT;
 	return c;
 }
 
 uint8_t rf12_rx_slow()
 {
+#ifdef SPCR
 	// slow down to under 2.5 MHz
 	bitSet(SPCR, SPR0);
+#endif
 
 	RF12_SELECT;
-	SPDR = 0xB0;
-	while (!(SPSR & _BV(SPIF)));
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	byte c = SPDR;
+	rf12_byte(0xB0);
+	byte c = rf12_byte(0x00);
 	RF12_UNSELECT;
-
+#ifdef SPCR
 	bitClear(SPCR, SPR0);
-
+#endif
 	return c;
 }
 
 uint8_t rf12_rx()
 {
 	RF12_SELECT;
-	SPDR = 0xB0;
-	while (!(SPSR & _BV(SPIF)));
-	SPDR = 0x00;
-	while (!(SPSR & _BV(SPIF)));
-	byte c = SPDR;
+	rf12_byte(0xB0);
+	byte c = rf12_byte(0x00);
 	RF12_UNSELECT;
 	return c;
 }
@@ -63,29 +80,30 @@ uint8_t rf12_rx()
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 {
 	RF12_SELECT;
-	SPDR = highbyte;
-	while (!(SPSR & _BV(SPIF)));
-	SPDR = lowbyte;
-	while (!(SPSR & _BV(SPIF)));
+	rf12_byte(highbyte);
+	uint8_t c = rf12_byte(lowbyte);
 	RF12_UNSELECT;
-	return SPDR;
+	return c;
 }
 
 void rf12_spi_init()
 {
-	bitSet(SS_PORT, SPI_SS);
-	bitSet(SS_DDR, SPI_SS);
+	bitSet(SELECT_PORT, SPI_SS);
+	bitSet(SELECT_DDR, SPI_SS);
 	digitalWrite(SPI_SS, 1);
 	pinMode(SPI_SS, OUTPUT);
 	pinMode(SPI_MOSI, OUTPUT);
 	pinMode(SPI_MISO, INPUT);
 	pinMode(SPI_SCK, OUTPUT);
+#ifdef SPCR
 	SPCR = _BV(SPE) | _BV(MSTR);
 	// use clk/2 (2x 1/4th) for sending (and clk/8 for recv, see rf12_xferSlow)
 	SPSR |= _BV(SPI2X);
-
-	DDRD &= ~_BV(RFM_IRQ); // IRQ input
-	PORTD |= _BV(RFM_IRQ); // IRQ pullup
+#else
+	USICR = bit(USIWM0);
+#endif
+	IRQ_DDR &= ~_BV(IRQ_PIN); // IRQ input
+	IRQ_PORT |= _BV(IRQ_PIN); // IRQ pullup
 }
 
 void rf12_reset_fifo()
