@@ -1,9 +1,8 @@
 #include <avr/io.h>
 #include <util/crc16.h>
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 #include "trx.h"
-
-const int led_pin = 7;
 
 int test = 2;
 byte c1 = 0, c2 = 0;
@@ -11,20 +10,37 @@ byte wait_irq = 1;
 byte buf[10];
 byte idx = 0;
 int total_chars = 0;
-byte debug = 0;
+byte debug = 1;
 byte spins = 0;
+byte loop_count = 0;
 
+SoftwareSerial com3(0, 1);
+
+static void space()
+{
+	delay(150);
+}
+
+static void blink_DE()
+{
+	dash();	dot(); dot(); space();
+	dot(); space();
+	dot(); dash(); dot(); dot(); space();
+}
 
 void setup()
 {
-	pinMode(led_pin, OUTPUT);
-	Serial.begin(115200);
+	pinMode(LED_PIN, OUTPUT);
+	com3.begin(4800);
+	com3.println("started");
+
+	rf12_setup();
 	// wait for init
 //	while (!Serial);
 	// wait for any characted from usb. Otherwise "cat /dev/ttyACM0" doesn't work.
 //	while (!Serial.available());
 //	Serial.read();
-	Serial.println("started");
+	blink_DE();
 }
 
 // buffer format:
@@ -50,10 +66,34 @@ static uint8_t verify_buf(uint8_t group, uint8_t* buf, uint8_t buflen)
 	return (expected_crc == crc);
 }
 
+static void blink_S()
+{
+	dot(); dot(); dot(); space();
+}
+
+static void blink_TO()
+{ 
+	dash(); space();
+	dash(); dash(); dash(); space();
+}
+
+static void blink_B()
+{
+	dash(); space();
+	dot(); dot(); dot(); space();
+}
+
 static void test2()
 {
-	while (IRQ_PORT & _BV(IRQ_PIN));
+	uint8_t signaled = rf12_wait_nirq();
 
+	if (!signaled)
+	{
+		if (debug)
+			blink_TO();
+		return;
+	}
+	
 	uint16_t c = rf12_read_status();
 
 	if ((c & 0x8000) == 0)
@@ -62,6 +102,7 @@ static void test2()
 		{
 			Serial.print("bad status:");
 			Serial.println(c, HEX);
+			blink_B();
 		}
 		return;
 	}
@@ -83,13 +124,15 @@ static void test2()
 		if (verify_buf(212, buf, 5))
 		{
 			Serial.println((char)buf[2]);
+			dot(); dash(); dash();
 			dot();
+			dot();
+			space();
 		}
 		else
 		{
 			Serial.println(" crc error");
-			dot();
-			dot();
+			dot(); dot(); space();
 		}
 		idx = spins = 0;
 		rf12_reset_fifo();
@@ -278,14 +321,10 @@ void loop()
 		}
 	}
 
-	if (test == 2)
-		test2();
-	else if (test == 5)
-	{
-		dot();
-		dot();
-		dot();
-		delay(2500);
-	}
+	test2();
+	
+	if (loop_count > 10)
+		debug = 0;
+	else
+		loop_count++;
 }
-

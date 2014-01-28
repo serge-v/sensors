@@ -1,16 +1,19 @@
-#MCU = atmega328p
-#F_CPU = 16000000
-MCU = attiny85
-F_CPU = 1000000
+MCU = atmega328p
+F_CPU = 16000000
+#MCU = attiny85
+#F_CPU = 1000000
 PORT = /dev/ttyACM0
 
+ARDUINO_LIBS_DIR = /usr/share/arduino/libraries/SoftwareSerial
+ARDUINO_LIBS_SRC = /usr/share/arduino/libraries/SoftwareSerial.cpp
+
 ifeq ($(MCU),attiny85)
-    ARDUINO = /usr/share/arduino/hardware/tiny/cores/tiny
-    CINCS = -I$(ARDUINO)
+    ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
+    CINCS = -I$(ARDUINO) -I$(ARDUINO_LIBS_DIR)
 
 else
     ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-    CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
+    CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(ARDUINO_LIBS_DIR)
 endif
 
 TARGET = rx2
@@ -24,11 +27,14 @@ CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/main.cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/WString.cpp
+    $(ARDUINO)/WString.cpp \
+    $(ARDUINO_LIBS_SRC)
 
 ifeq ($(MCU),attiny85)
     SRC += $(ARDUINO)/pins_arduino.c
-    CXXSRC += $(ARDUINO)/TinyDebugSerial.cpp $(ARDUINO)/TinyDebugSerial115200.cpp
+    CXXSRC += $(ARDUINO)/TinyDebugSerial.cpp \
+        $(ARDUINO)/TinyDebugSerial115200.cpp \
+        $(ARDUINO)/TinyDebugSerial9600.cpp
 else
     CXXSRC += $(ARDUINO)/Stream.cpp
 endif
@@ -47,17 +53,13 @@ DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100 -DDEFAULT_TO_TINY_DEBUG_SERIAL
-CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100 -DDEFAULT_TO_TINY_DEBUG_SERIAL
+CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
+CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
 
 # Place -I options here
 CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
-# c89   - "ANSI" C
-# gnu89 - c89 plus GCC extensions
-# c99   - ISO C99 standard (not yet fully implemented)
-# gnu99 - c99 plus GCC extensions
 CSTANDARD = -std=gnu99 -Wstrict-prototypes
 #CDEBUG = -g$(DEBUG)
 CWARN = -Wall
@@ -76,6 +78,7 @@ AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
   -b $(UPLOAD_RATE)
+AVRDUDE_T85_FLAGS = -F -p t85 -P $(AVRDUDE_PORT) -c avrisp -b 19200
 
 # Program settings
 CC = avr-gcc
@@ -123,6 +126,9 @@ upload: $(TARGET).hex $(TARGET).eep
 	sleep 5
 	echo dd > $(AVRDUDE_PORT)
 
+upload85: $(TARGET).hex $(TARGET).eep
+	$(AVRDUDE) $(AVRDUDE_T85_FLAGS) $(AVRDUDE_WRITE_FLASH)
+
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \
@@ -168,6 +174,9 @@ $(TARGET).elf: $(OBJ)
 %.o: $(ARDUINO)/%.cpp
 	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
+%.o: $(ARDUINO_LIBS_DIR)/%.cpp
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
+
 %.o: %.cpp
 	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
@@ -210,3 +219,108 @@ depend:
 	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
 
 .PHONY:	all build elf hex eep lss sym program coff extcoff clean depend
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+trx.o: trx.c /usr/share/arduino/hardware/attiny/cores/tiny/Arduino.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/WProgram.h \
+ /usr/lib/avr/include/stdlib.h /usr/lib/gcc/avr/4.8.2/include/stddef.h \
+ /usr/lib/avr/include/string.h /usr/lib/avr/include/math.h \
+ /usr/lib/avr/include/avr/interrupt.h /usr/lib/avr/include/avr/io.h \
+ /usr/lib/avr/include/avr/sfr_defs.h /usr/lib/avr/include/inttypes.h \
+ /usr/lib/gcc/avr/4.8.2/include/stdint.h /usr/lib/avr/include/stdint.h \
+ /usr/lib/avr/include/avr/iotn85.h /usr/lib/avr/include/avr/iotnx5.h \
+ /usr/lib/avr/include/avr/portpins.h /usr/lib/avr/include/avr/common.h \
+ /usr/lib/avr/include/avr/version.h /usr/lib/avr/include/avr/fuse.h \
+ /usr/lib/avr/include/avr/lock.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_build_options.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_pins.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/pins_arduino.h \
+ /usr/lib/avr/include/avr/pgmspace.h trx.h
+wiring.o: /usr/share/arduino/hardware/attiny/cores/tiny/wiring.c \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_build_options.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_adc.h \
+ /usr/lib/avr/include/avr/io.h /usr/lib/avr/include/avr/sfr_defs.h \
+ /usr/lib/avr/include/inttypes.h /usr/lib/gcc/avr/4.8.2/include/stdint.h \
+ /usr/lib/avr/include/stdint.h /usr/lib/avr/include/avr/iotn85.h \
+ /usr/lib/avr/include/avr/iotnx5.h /usr/lib/avr/include/avr/portpins.h \
+ /usr/lib/avr/include/avr/common.h /usr/lib/avr/include/avr/version.h \
+ /usr/lib/avr/include/avr/fuse.h /usr/lib/avr/include/avr/lock.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_macros.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_timers.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_pins.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring_private.h \
+ /usr/lib/avr/include/avr/interrupt.h /usr/lib/avr/include/avr/delay.h \
+ /usr/lib/avr/include/util/delay.h \
+ /usr/lib/avr/include/util/delay_basic.h /usr/lib/avr/include/math.h \
+ /usr/lib/avr/include/stdio.h /usr/lib/gcc/avr/4.8.2/include/stdarg.h \
+ /usr/lib/gcc/avr/4.8.2/include/stddef.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring.h \
+ /usr/lib/avr/include/stdlib.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/ToneTimer.h
+wiring_digital.o: \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring_digital.c \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring_private.h \
+ /usr/lib/avr/include/avr/io.h /usr/lib/avr/include/avr/sfr_defs.h \
+ /usr/lib/avr/include/inttypes.h /usr/lib/gcc/avr/4.8.2/include/stdint.h \
+ /usr/lib/avr/include/stdint.h /usr/lib/avr/include/avr/iotn85.h \
+ /usr/lib/avr/include/avr/iotnx5.h /usr/lib/avr/include/avr/portpins.h \
+ /usr/lib/avr/include/avr/common.h /usr/lib/avr/include/avr/version.h \
+ /usr/lib/avr/include/avr/fuse.h /usr/lib/avr/include/avr/lock.h \
+ /usr/lib/avr/include/avr/interrupt.h /usr/lib/avr/include/avr/delay.h \
+ /usr/lib/avr/include/util/delay.h \
+ /usr/lib/avr/include/util/delay_basic.h /usr/lib/avr/include/math.h \
+ /usr/lib/avr/include/stdio.h /usr/lib/gcc/avr/4.8.2/include/stdarg.h \
+ /usr/lib/gcc/avr/4.8.2/include/stddef.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring.h \
+ /usr/lib/avr/include/stdlib.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_build_options.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/pins_arduino.h \
+ /usr/lib/avr/include/avr/pgmspace.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_pins.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_timers.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_macros.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/PwmTimer.h
+WInterrupts.o: \
+ /usr/share/arduino/hardware/attiny/cores/tiny/WInterrupts.c \
+ /usr/lib/avr/include/inttypes.h /usr/lib/gcc/avr/4.8.2/include/stdint.h \
+ /usr/lib/avr/include/stdint.h /usr/lib/avr/include/avr/io.h \
+ /usr/lib/avr/include/avr/sfr_defs.h /usr/lib/avr/include/avr/iotn85.h \
+ /usr/lib/avr/include/avr/iotnx5.h /usr/lib/avr/include/avr/portpins.h \
+ /usr/lib/avr/include/avr/common.h /usr/lib/avr/include/avr/version.h \
+ /usr/lib/avr/include/avr/fuse.h /usr/lib/avr/include/avr/lock.h \
+ /usr/lib/avr/include/avr/interrupt.h /usr/lib/avr/include/avr/pgmspace.h \
+ /usr/lib/gcc/avr/4.8.2/include/stddef.h /usr/lib/avr/include/stdio.h \
+ /usr/lib/gcc/avr/4.8.2/include/stdarg.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/WConstants.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring.h \
+ /usr/lib/avr/include/stdlib.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_build_options.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring_private.h \
+ /usr/lib/avr/include/avr/delay.h /usr/lib/avr/include/util/delay.h \
+ /usr/lib/avr/include/util/delay_basic.h /usr/lib/avr/include/math.h
+pins_arduino.o: \
+ /usr/share/arduino/hardware/attiny/cores/tiny/pins_arduino.c \
+ /usr/lib/avr/include/avr/io.h /usr/lib/avr/include/avr/sfr_defs.h \
+ /usr/lib/avr/include/inttypes.h /usr/lib/gcc/avr/4.8.2/include/stdint.h \
+ /usr/lib/avr/include/stdint.h /usr/lib/avr/include/avr/iotn85.h \
+ /usr/lib/avr/include/avr/iotnx5.h /usr/lib/avr/include/avr/portpins.h \
+ /usr/lib/avr/include/avr/common.h /usr/lib/avr/include/avr/version.h \
+ /usr/lib/avr/include/avr/fuse.h /usr/lib/avr/include/avr/lock.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/pins_arduino.h \
+ /usr/lib/avr/include/avr/pgmspace.h \
+ /usr/lib/gcc/avr/4.8.2/include/stddef.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/core_build_options.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring_private.h \
+ /usr/lib/avr/include/avr/interrupt.h /usr/lib/avr/include/avr/delay.h \
+ /usr/lib/avr/include/util/delay.h \
+ /usr/lib/avr/include/util/delay_basic.h /usr/lib/avr/include/math.h \
+ /usr/lib/avr/include/stdio.h /usr/lib/gcc/avr/4.8.2/include/stdarg.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/wiring.h \
+ /usr/lib/avr/include/stdlib.h \
+ /usr/share/arduino/hardware/attiny/cores/tiny/binary.h

@@ -6,9 +6,17 @@
 
 void dot()
 {
-	digitalWrite(7, HIGH);
+	digitalWrite(LED_PIN, HIGH);
 	delay(50);
-	digitalWrite(7, LOW);
+	digitalWrite(LED_PIN, LOW);
+	delay(100);
+}
+
+void dash()
+{
+	digitalWrite(LED_PIN, HIGH);
+	delay(250);
+	digitalWrite(LED_PIN, LOW);
 	delay(100);
 }
 
