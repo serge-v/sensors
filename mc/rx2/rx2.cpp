@@ -20,7 +20,7 @@ void setup()
 	pinMode(led_pin, OUTPUT);
 	Serial.begin(115200);
 	// wait for init
-	while (!Serial);
+//	while (!Serial);
 	// wait for any characted from usb. Otherwise "cat /dev/ttyACM0" doesn't work.
 //	while (!Serial.available());
 //	Serial.read();
@@ -52,7 +52,7 @@ static uint8_t verify_buf(uint8_t group, uint8_t* buf, uint8_t buflen)
 
 static void test2()
 {
-	while (IRQ_HI);
+	while (IRQ_PORT & _BV(IRQ_PIN));
 
 	uint16_t c = rf12_read_status();
 
@@ -72,7 +72,7 @@ static void test2()
 		Serial.println(c, HEX);
 	}
 
-	while (!IRQ_HI && idx < 5)
+	while (!(IRQ_PORT & _BV(IRQ_PIN)) && idx < 5)
 	{
 		buf[idx++] = rf12_rx_slow();
 		total_chars++;
@@ -94,7 +94,7 @@ static void test2()
 		idx = spins = 0;
 		rf12_reset_fifo();
 	}
-	
+
 	spins++;
 	if (spins > 100)
 	{
@@ -105,11 +105,13 @@ static void test2()
 
 static void setup_test()
 {
-	test = Serial.parseInt();
+/*	test = Serial.parseInt();
 	if (test == 2)
 		rf12_setup();
 	Serial.print("setup test: ");
 	Serial.println(test);
+*/
+	test = 2;
 }
 
 static void send_command()
@@ -137,7 +139,7 @@ static void dump()
 	Serial.print(PINB, HEX);
 	Serial.print("  ");
 	Serial.println(PINB, BIN);
-
+#ifdef PORTC
 	Serial.print("PORTC: ");
 	Serial.print(PORTC, HEX);
 	Serial.print("  ");
@@ -178,7 +180,7 @@ static void dump()
 	Serial.println(EIMSK, BIN);
 	Serial.print("irq: ");
 	Serial.println(PIND & _BV(PD2));
-
+#endif
 	Serial.print("buf: ");
 	for (int i = 0; i < 10; i++)
 	{
@@ -191,7 +193,7 @@ static void dump()
 	Serial.print("chars: ");
 	Serial.println(total_chars);
 }
-
+/*
 static void read_command(byte* c1, byte* c2)
 {
 	byte c = Serial.read();
@@ -236,7 +238,7 @@ static void read_command(byte* c1, byte* c2)
 	Serial.print(' ');
 	Serial.println(*c2, HEX);
 }
-
+*/
 static void wipe()
 {
 	for (int i = 0; i < 10; i++)
@@ -255,7 +257,7 @@ void loop()
 			setup_test();
 			break;
 		case 'c':
-			read_command(&c1, &c2);
+//			read_command(&c1, &c2);
 			break;
 		case 's':
 			send_command();

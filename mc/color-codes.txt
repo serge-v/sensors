@@ -1,7 +1,8 @@
 Brown Black Red Gold      1 0 100 5% 1k
-Orange Orange Red Gold    3 3 100 5% 3.3k
+Brown Black Yellow Gold   1 0 10k 5% 100k
 Brown Green Orange Gold   1 6 1k  5% 15k
+Orange Orange Brown Gold  3 3 10  5% 330
+Orange Orange Red Gold    3 3 100 5% 3.3k
 Yellow Violet Yellow Gold 4 7 10k 5% 470k
 Yellow Violet Red Gold    4 7 100 5% 4.7k
-Brown Black Yellow Gold   1 0 10k 5% 100k
 

@@ -1,11 +1,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define RFM_IRQ     2
-#define SS_DDR      DDRB
-#define SS_PORT     PORTB
-#define SS_BIT      2     // for PORTB: 2 = d.10, 1 = d.9, 0 = d.8
+#if defined(__AVR_ATmega328P__)
+#	define IRQ_DDR DDRD
+#	define IRQ_PORT PIND
+#	define IRQ_PIN PD2
+#	define SELECT_DDR PORTB
+#	define SELECT_PORT PORTB
+#	define SELECT_PIN PB2
+#else
+#	define IRQ_DDR DDRB
+#	define IRQ_PORT PINB
+#	define IRQ_PIN PB3
+#	define SELECT_DDR PORTB
+#	define SELECT_PORT PORTB
+#	define SELECT_PIN PB4
+#endif
 
 #define SPI_SS      10    // PB2, pin 16
 #define SPI_MOSI    11    // PB3, pin 17

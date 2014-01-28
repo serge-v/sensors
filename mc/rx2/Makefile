@@ -1,6 +1,19 @@
+#MCU = atmega328p
+#F_CPU = 16000000
+MCU = attiny85
+F_CPU = 1000000
 PORT = /dev/ttyACM0
+
+ifeq ($(MCU),attiny85)
+    ARDUINO = /usr/share/arduino/hardware/tiny/cores/tiny
+    CINCS = -I$(ARDUINO)
+
+else
+    ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
+    CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
+endif
+
 TARGET = rx2
-ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 
 SRC = trx.c \
     $(ARDUINO)/wiring.c \
@@ -11,11 +24,15 @@ CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/main.cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/Stream.cpp \
     $(ARDUINO)/WString.cpp
 
-MCU = atmega328p
-F_CPU = 16000000
+ifeq ($(MCU),attiny85)
+    SRC += $(ARDUINO)/pins_arduino.c
+    CXXSRC += $(ARDUINO)/TinyDebugSerial.cpp $(ARDUINO)/TinyDebugSerial115200.cpp
+else
+    CXXSRC += $(ARDUINO)/Stream.cpp
+endif
+
 FORMAT = ihex
 UPLOAD_RATE = 115200
 
@@ -30,11 +47,10 @@ DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
-CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
+CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100 -DDEFAULT_TO_TINY_DEBUG_SERIAL
+CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100 -DDEFAULT_TO_TINY_DEBUG_SERIAL
 
 # Place -I options here
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
 CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
