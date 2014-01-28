@@ -8,7 +8,7 @@ extern "C" {
 #	define SELECT_DDR  PORTB
 #	define SELECT_PORT PORTB
 #	define SELECT_PIN  PB2
-#	define LED_PIN     7
+#	define LED_PIN     9
 #	define SPI_SS      10    // PB2, pin 16
 #	define SPI_MOSI    11    // PB3, pin 17
 #	define SPI_MISO    12    // PB4, pin 18

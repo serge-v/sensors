@@ -260,6 +260,14 @@ void rf12_reset_fifo()
 void rf12_setup()
 {
 	rf12_spi_init();
+
+	rf12_cmd(0, 0);
+	while (!rf12_wait_nirq());
+	{
+		delay(200);
+		rf12_cmd(0, 0);
+	}
+
 	rf12_cmd(0, 0);
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EB | RF_PWR_DC);
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);

@@ -1,7 +1,7 @@
 #include <avr/io.h>
 #include <util/crc16.h>
 #include <Arduino.h>
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
 #include "trx.h"
 
 int test = 2;
@@ -10,37 +10,25 @@ byte wait_irq = 1;
 byte buf[10];
 byte idx = 0;
 int total_chars = 0;
-byte debug = 1;
+byte debug = 0;
 byte spins = 0;
 byte loop_count = 0;
 
-SoftwareSerial com3(0, 1);
+#include "debug.h"
 
-static void space()
-{
-	delay(150);
-}
-
-static void blink_DE()
-{
-	dash();	dot(); dot(); space();
-	dot(); space();
-	dot(); dash(); dot(); dot(); space();
-}
+//SoftwareSerial com3(0, 1);
 
 void setup()
 {
 	pinMode(LED_PIN, OUTPUT);
-	com3.begin(4800);
-	com3.println("started");
+	Serial.begin(115200);
 
-	rf12_setup();
 	// wait for init
-//	while (!Serial);
+	while (!Serial);
 	// wait for any characted from usb. Otherwise "cat /dev/ttyACM0" doesn't work.
-//	while (!Serial.available());
-//	Serial.read();
-	blink_DE();
+	while (!Serial.available());
+	Serial.read();
+	Serial.println("started");
 }
 
 // buffer format:
@@ -59,28 +47,30 @@ static uint8_t verify_buf(uint8_t group, uint8_t* buf, uint8_t buflen)
 	crc = _crc16_update(crc, group);
 	crc = _crc16_update(crc, buf[0]); // network id
 	crc = _crc16_update(crc, len);
-	for (int i = 2; i < len - 3; i++)
+	for (int i = 2; i < buflen - 2; i++)
 		crc = _crc16_update(crc, buf[i]);
 
 	uint16_t expected_crc = *(uint16_t*)(buf + len + 2);
+
+	if (expected_crc != crc)
+	{
+		Serial.print("buf:");
+		for (int i = 0; i < 5; i++)
+		{
+			Serial.print(' ');
+			Serial.print(buf[i], HEX);
+
+		}
+		Serial.println();
+		Serial.print("len: ");
+		Serial.print(len, HEX);
+		Serial.print(" ex: ");
+		Serial.print(expected_crc, HEX);
+		Serial.print(" calc: ");
+		Serial.println(crc, HEX);
+	}
+	
 	return (expected_crc == crc);
-}
-
-static void blink_S()
-{
-	dot(); dot(); dot(); space();
-}
-
-static void blink_TO()
-{ 
-	dash(); space();
-	dash(); dash(); dash(); space();
-}
-
-static void blink_B()
-{
-	dash(); space();
-	dot(); dot(); dot(); space();
 }
 
 static void test2()
@@ -90,7 +80,7 @@ static void test2()
 	if (!signaled)
 	{
 		if (debug)
-			blink_TO();
+			Serial.print('.');
 		return;
 	}
 	
@@ -100,9 +90,8 @@ static void test2()
 	{
 		if (debug)
 		{
-			Serial.print("bad status:");
+			Serial.println("bad status:");
 			Serial.println(c, HEX);
-			blink_B();
 		}
 		return;
 	}
@@ -123,17 +112,12 @@ static void test2()
 	{
 		if (verify_buf(212, buf, 5))
 		{
-			Serial.println((char)buf[2]);
-			dot(); dash(); dash();
+			Serial.print((char)buf[2]);
+			Serial.print(' ');
 			dot();
-			dot();
-			space();
 		}
 		else
-		{
 			Serial.println(" crc error");
-			dot(); dot(); space();
-		}
 		idx = spins = 0;
 		rf12_reset_fifo();
 	}
@@ -148,13 +132,12 @@ static void test2()
 
 static void setup_test()
 {
-/*	test = Serial.parseInt();
+	test = Serial.parseInt();
 	if (test == 2)
+	{
 		rf12_setup();
-	Serial.print("setup test: ");
-	Serial.println(test);
-*/
-	test = 2;
+		Serial.print("rf12_setup done");
+	}
 }
 
 static void send_command()
@@ -168,75 +151,6 @@ static void send_command()
 	Serial.println(rc, HEX);
 }
 
-static void dump()
-{
-	Serial.print("PORTB: ");
-	Serial.print(PORTB, HEX);
-	Serial.print("  ");
-	Serial.println(PORTB, BIN);
-	Serial.print("DDRB: ");
-	Serial.print(DDRB, HEX);
-	Serial.print("  ");
-	Serial.println(DDRB, BIN);
-	Serial.print("PINB: ");
-	Serial.print(PINB, HEX);
-	Serial.print("  ");
-	Serial.println(PINB, BIN);
-#ifdef PORTC
-	Serial.print("PORTC: ");
-	Serial.print(PORTC, HEX);
-	Serial.print("  ");
-	Serial.println(PORTC, BIN);
-	Serial.print("DDRC: ");
-	Serial.print(DDRC, HEX);
-	Serial.print("  ");
-	Serial.println(DDRC, BIN);
-	Serial.print("PINC: ");
-	Serial.print(PINC, HEX);
-	Serial.print("  ");
-	Serial.println(PINC, BIN);
-
-	Serial.print("PORTD: ");
-	Serial.print(PORTD, HEX);
-	Serial.print("  ");
-	Serial.println(PORTD, BIN);
-	Serial.print("DDRD: ");
-	Serial.print(DDRD, HEX);
-	Serial.print("  ");
-	Serial.println(DDRD, BIN);
-	Serial.print("PIND: ");
-	Serial.print(PIND, HEX);
-	Serial.print("  ");
-	Serial.println(PIND, BIN);
-
-	Serial.print("SPCR: ");
-	Serial.print(SPCR, HEX);
-	Serial.print("  ");
-	Serial.println(SPCR, BIN);
-	Serial.print("SPSR: ");
-	Serial.print(SPSR, HEX);
-	Serial.print("  ");
-	Serial.println(SPSR, BIN);
-	Serial.print("EIMSK: ");
-	Serial.print(EIMSK, HEX);
-	Serial.print("  ");
-	Serial.println(EIMSK, BIN);
-	Serial.print("irq: ");
-	Serial.println(PIND & _BV(PD2));
-#endif
-	Serial.print("buf: ");
-	for (int i = 0; i < 10; i++)
-	{
-		Serial.print(buf[i], HEX);
-		Serial.print(' ');
-	}
-
-	Serial.print(" idx: ");
-	Serial.println(idx);
-	Serial.print("chars: ");
-	Serial.println(total_chars);
-}
-/*
 static void read_command(byte* c1, byte* c2)
 {
 	byte c = Serial.read();
@@ -281,12 +195,6 @@ static void read_command(byte* c1, byte* c2)
 	Serial.print(' ');
 	Serial.println(*c2, HEX);
 }
-*/
-static void wipe()
-{
-	for (int i = 0; i < 10; i++)
-		Serial.println();
-}
 
 void loop()
 {
@@ -300,7 +208,7 @@ void loop()
 			setup_test();
 			break;
 		case 'c':
-//			read_command(&c1, &c2);
+			read_command(&c1, &c2);
 			break;
 		case 's':
 			send_command();
@@ -321,10 +229,14 @@ void loop()
 		}
 	}
 
-	test2();
-	
+	if (test == 2)
+		test2();
+	else
+		blink_S();
+	/*
 	if (loop_count > 10)
 		debug = 0;
 	else
 		loop_count++;
+	*/
 }
