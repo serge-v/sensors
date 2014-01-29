@@ -11,13 +11,11 @@ uint8_t KEY[] = "ABCDABCDABCDABCD";
 int interPacketDelay = 1000; //wait this many ms between sending packets
 char input = 0;
 
-// Need an instance of the Radio Module
 RFM12B radio;
-byte sendSize=0;
+byte sendSize = 0;
 char payload[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890~!@#$%^&*(){}[]`|<>?+=:;,.";
 bool requestACK=false;
 
-// wait a few milliseconds for proper ACK, return true if received
 static bool waitForAck()
 {
 	long now = millis();

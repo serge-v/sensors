@@ -1,15 +1,16 @@
-MCU = atmega328p
-F_CPU = 16000000
+MCU = attiny85
+F_CPU = 1000000
 
-PORT = /dev/ttyACM0
+PORT = /dev/ttyACM1
 
 RFM12_LIB=../lib/RFM12B
-ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(RFM12_LIB)
+ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
+CINCS = -I$(ARDUINO) -I$(RFM12_LIB)
 
 TARGET = tx3
 
 SRC = \
+    $(ARDUINO)/pins_arduino.c \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
     $(ARDUINO)/WInterrupts.c
@@ -19,10 +20,12 @@ CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
     $(ARDUINO)/WString.cpp \
-    $(RFM12_LIB)/RFM12B.cpp
+    $(ARDUINO)/TinyDebugSerial.cpp \
+    $(ARDUINO)/TinyDebugSerial115200.cpp \
+    $(RFM12_LIB)/RFM12B.cpp \
 
 FORMAT = ihex
-UPLOAD_RATE = 115200
+UPLOAD_RATE = 19200
 
 MAKEFILE = Makefile
 
@@ -46,7 +49,7 @@ LDFLAGS = -Wl,--gc-sections
 
 
 # Programming support using avrdude. Settings and variables.
-AVRDUDE_PROGRAMMER = arduino
+AVRDUDE_PROGRAMMER = avrisp
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
@@ -89,11 +92,7 @@ sym: $(TARGET).sym
 
 # Program the device.
 upload: $(TARGET).hex $(TARGET).eep
-	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
-	sleep 5
-	echo dd > $(AVRDUDE_PORT)
-
 
 .SUFFIXES: .elf .hex .eep .lss .sym
 

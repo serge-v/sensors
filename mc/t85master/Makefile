@@ -7,19 +7,20 @@ RFM12_LIB=../lib/RFM12B
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(RFM12_LIB)
 
-TARGET = tx3
+TARGET = t85master
 
 SRC = \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/WInterrupts.c
+    $(ARDUINO)/wiring_analog.c \
+#    $(ARDUINO)/WInterrupts.c
 
 CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/main.cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/WString.cpp \
-    $(RFM12_LIB)/RFM12B.cpp
+#    $(ARDUINO)/WString.cpp \
+#    $(RFM12_LIB)/RFM12B.cpp
 
 FORMAT = ihex
 UPLOAD_RATE = 115200
