@@ -23,31 +23,33 @@ uint8_t KEY[] = "ABCDABCDABCDABCD";
 RFM12B radio;
 void setup()
 {
-  radio.Initialize(NODEID, RF12_433MHZ, NETWORKID);
-  radio.Encrypt(KEY);      //comment this out to disable encryption
-  Serial.begin(SERIAL_BAUD);
-  Serial.println("Listening...");
+	radio.Initialize(NODEID, RF12_433MHZ, NETWORKID);
+	radio.Encrypt(KEY);      //comment this out to disable encryption
+	Serial.begin(SERIAL_BAUD);
+	Serial.println("Listening...");
 }
 
 void loop()
 {
-  if (radio.ReceiveComplete())
-  {
-    if (radio.CRCPass())
-    {
-      Serial.print('[');Serial.print(radio.GetSender());Serial.print("] ");
-      for (byte i = 0; i < *radio.DataLen; i++) //can also use radio.GetDataLen() if you don't like pointers
-        Serial.print((char)radio.Data[i]);
+	if (radio.ReceiveComplete())
+	{
+		if (radio.CRCPass())
+		{
+			Serial.print('[');
+			Serial.print(radio.GetSender());
+			Serial.print("] ");
+			for (byte i = 0; i < *radio.DataLen; i++) //can also use radio.GetDataLen() if you don't like pointers
+				Serial.print((char)radio.Data[i]);
 
-      if (radio.ACKRequested())
-      {
-        radio.SendACK();
-        Serial.print(" - ACK sent");
-      }
-    }
-    else
-      Serial.print("BAD-CRC");
+			if (radio.ACKRequested())
+			{
+				radio.SendACK();
+				Serial.print(" - ACK sent");
+			}
+		}
+		else
+			Serial.print("BAD-CRC");
 
-    Serial.println();
-  }
+		Serial.println();
+	}
 }
