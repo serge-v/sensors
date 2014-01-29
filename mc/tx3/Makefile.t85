@@ -80,9 +80,16 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: build
+all: build check
+	@mv this_build~.conf last_build~.conf
+	@cat last_build~.conf
 
 build: elf hex eep
+
+check:
+	@./get_conf.sh > this_build~.conf
+	@$(CC) -mmcu=$(MCU) $(CINCS) -E check_pins.cpp | grep __RFM12B_PINS__ -A 100 >> this_build~.conf
+	@if [ -f last_build~.conf ] ; then colordiff -u -L 'obj files compiled with:' -L 'new conflicting settings:' last_build~.conf this_build~.conf ; fi
 
 elf: $(TARGET).elf
 hex: $(TARGET).hex
@@ -153,7 +160,8 @@ $(TARGET).elf: $(OBJ)
 clean:
 	$(REMOVE) $(TARGET).hex $(TARGET).eep $(TARGET).cof $(TARGET).elf \
 	$(TARGET).map $(TARGET).sym $(TARGET).lss \
-	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
+	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d) \
+	last_build~.conf this_build~.conf
 
 depend:
 	if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \

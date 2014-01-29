@@ -1,0 +1,10 @@
+#include <RFM12B.h>
+__RFM12B_PINS__
+"RFM_IRQ "   RFM_IRQ
+"SS_DDR  "   SS_DDR
+"SS_PORT "   SS_PORT
+"SS_BIT  "   SS_BIT
+"SPI_SS  "   SPI_SS
+"SPI_MOSI"   SPI_MOSI
+"SPI_MISO"   SPI_MISO
+"SPI_SCK "   SPI_SCK

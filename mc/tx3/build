@@ -1,1 +1,1 @@
-printf "\033c" ; make -f Makefile.t85 2>&1 | colorgcc|head -20
+printf "\033c" ; make -f Makefile.t85 $* 2>&1 | colorgcc
