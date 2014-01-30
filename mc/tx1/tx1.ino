@@ -9,14 +9,13 @@
 #define freq RF12_433MHZ     //Freq of RF12B can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. Match freq to module
 
 
-typedef struct { int power1, power2, power3, battery; } PayloadTX;      // create structure - a neat way of packaging data for RF comms
-PayloadTX emontx;
+char emontx = 'A';
 
 void setup() {
 
   pinMode(7, OUTPUT);
   rf12_initialize(myNodeID,freq,network);   //Initialize RFM12 with settings defined above  
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("RFM12B Transmitter - Simple demo");
 
 
@@ -32,23 +31,26 @@ void setup() {
 
 }
 
-void loop() {
-  emontx.power1=emontx.power1+1;
-  emontx.power2=emontx.power2+2;
-  emontx.power3=emontx.power3+3;
-  emontx.battery=emontx.battery+4;
+void loop()
+{
+  if (emontx++ > 'Z')
+    emontx = 'A';
+  
  
-  int i = 0; while (!rf12_canSend() && i<10) {rf12_recvDone(); i++;}
-    rf12_sendStart(0, &emontx, sizeof emontx);
+  int i = 0;
+
+  while (!rf12_canSend() && i<10)
+  {
+    rf12_recvDone();
+    i++;
+  }
+  
+  rf12_sendStart(0, &emontx, sizeof emontx);
     
-  Serial.print("power1: "); Serial.println(emontx.power1); 
-  Serial.print("power2: "); Serial.println(emontx.power2); 
-  Serial.print("power3: "); Serial.println(emontx.power3); 
-  Serial.print("battery: "); Serial.println(emontx.battery); 
-  Serial.println("  "); 
+  Serial.println(emontx); 
   
   digitalWrite(7, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);               // wait for a second
+  delay(100);               // wait for a second
   digitalWrite(7, LOW);    // turn the LED off by making the voltage LOW
   delay(1000); 
   

@@ -16,11 +16,20 @@ int bad_count = 0;
 void setup() {
 
   pinMode(7, OUTPUT);
-  rf12_initialize(myNodeID, freq, network);   //Initialize RFM12 with settings defined above  
+  rf12_initialize(myNodeID,freq,network);   //Initialize RFM12 with settings defined above  
   Serial.begin(115200);
-  Serial.read();
-  Serial.println("setup");
-}
+  Serial.println("RFM12B Transmitter - Simple demo");
+
+
+
+ Serial.print("Node: "); 
+ Serial.print(myNodeID); 
+ Serial.print(" Freq: "); 
+ if (freq == RF12_433MHZ) Serial.print("433Mhz");
+ if (freq == RF12_868MHZ) Serial.print("868Mhz");
+ if (freq == RF12_915MHZ) Serial.print("915Mhz"); 
+ Serial.print(" Network: "); 
+ Serial.println(network);
 
 void dot()
 {
