@@ -12,7 +12,9 @@ byte idx = 0;
 int total_chars = 0;
 byte debug = 0;
 byte spins = 0;
-byte loop_count = 0;
+byte send_response = 0;
+byte rx_is_on = 1;
+byte delay_us = 0;
 
 #include "debug.h"
 
@@ -29,6 +31,9 @@ void setup()
 	while (!Serial.available());
 	Serial.read();
 	Serial.println("started");
+
+	rf12_setup();
+	Serial.println("rf12_setup done");
 }
 
 // buffer format:
@@ -73,14 +78,79 @@ static uint8_t verify_buf(uint8_t group, uint8_t* buf, uint8_t buflen)
 	return (expected_crc == crc);
 }
 
+#define WAIT_IRQ_LO() while( IRQ_PORT & _BV(IRQ_PIN) );
+
+void tx_byte(byte b)
+{
+	byte irq1 = (IRQ_PORT & _BV(IRQ_PIN));
+	WAIT_IRQ_LO();
+	byte cmd = rf12_cmd(0xB8, b);
+/*	if (!rf12_wait_nirq())
+	{
+		Serial.println(" err tx hdr");
+	} */
+//	byte status = rf12_read_status();
+//	WAIT_IRQ_HI();
+	byte irq2 = (IRQ_PORT & _BV(IRQ_PIN));
+	if (debug)
+	{
+		Serial.print(" cmd: ");
+		Serial.print(cmd, HEX);
+//		Serial.print(" st: ");
+//		Serial.print(status, HEX);
+		Serial.print(" irq1: ");
+		Serial.print(irq1, HEX);
+		Serial.print(" irq2: ");
+		Serial.println(irq2, HEX);
+	}
+}
+
+volatile byte sidx = 0;
+byte sbuf[8];
+
+static void rf12_interrupt()
+{
+	rf12_cmd(0x00, 0x00);
+	rf12_cmd(0xB8, sbuf[sidx]);
+	sidx++;
+	if (sidx == 8)
+		Serial.println("sbuf sent");
+}
+
+static void respond()
+{
+	rf12_rx_off();
+	rf12_reset_fifo();
+	Serial.print("resp");
+	
+	sidx = 0;
+	attachInterrupt(0, rf12_interrupt, LOW);
+	rf12_tx_on();
+
+	sbuf[0] = 0xAA;
+	sbuf[1] = 0x2D;
+	sbuf[2] = 0xD4;
+	
+	int i = 0;
+	for (i = 0; i < 5; i++)
+		sbuf[i+3] = buf[i];
+
+	sbuf[i] = 0;
+	
+	while(sidx < 8);
+
+	rf12_tx_off();
+	detachInterrupt(0);
+	Serial.println(" sent");
+	rf12_rx_on();
+}
+
 static void test2()
 {
 	uint8_t signaled = rf12_wait_nirq();
 
 	if (!signaled)
 	{
-		if (debug)
-			Serial.print('.');
 		return;
 	}
 	
@@ -90,18 +160,12 @@ static void test2()
 	{
 		if (debug)
 		{
-			Serial.println("bad status:");
+			Serial.print("bad status:");
 			Serial.println(c, HEX);
 		}
 		return;
 	}
-
-	if (debug)
-	{
-		Serial.print("status:");
-		Serial.println(c, HEX);
-	}
-
+	
 	while (!(IRQ_PORT & _BV(IRQ_PIN)) && idx < 5)
 	{
 		buf[idx++] = rf12_rx_slow();
@@ -115,6 +179,7 @@ static void test2()
 			Serial.print((char)buf[2]);
 			Serial.print(' ');
 			dot();
+			send_response = 1;
 		}
 		else
 			Serial.println(" crc error");
@@ -128,6 +193,12 @@ static void test2()
 		idx = spins = 0;
 		rf12_reset_fifo();
 	}
+	
+	if (send_response)
+	{
+		respond();
+		send_response = 0;
+	}
 }
 
 static void setup_test()
@@ -136,7 +207,7 @@ static void setup_test()
 	if (test == 2)
 	{
 		rf12_setup();
-		Serial.print("rf12_setup done");
+		Serial.println("rf12_setup done");
 	}
 }
 
@@ -224,8 +295,33 @@ void loop()
 			break;
 		case 'd':
 			dump();
+			break;
+		case 'a':
+			delay_us++;
+			Serial.print("delay: ");
+			Serial.println(delay_us);
+			break;
+		case 'z':
+			delay_us--;
+			Serial.print("delay: ");
+			Serial.println(delay_us);
+			break;
 		case 'p':
 			rf12_spi_init();
+			break;
+		case 'x':
+			rx_is_on = !rx_is_on;
+			if (rx_is_on)
+			{
+				rf12_rx_on();
+				Serial.println("rx is on");
+			}
+			else
+			{
+				rf12_rx_off();
+				Serial.println("rx is off");
+			}
+			break;
 		}
 	}
 

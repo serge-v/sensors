@@ -61,21 +61,19 @@ uint16_t rf12_read_status()
 
 uint8_t rf12_rx_slow()
 {
-#ifdef SPCR
 	// slow down to under 2.5 MHz
 	bitSet(SPCR, SPR0);
-#endif
 
 	RF12_SELECT;
 	rf12_byte(0xB0);
 	byte c = rf12_byte(0x00);
 	RF12_UNSELECT;
-#ifdef SPCR
+
 	bitClear(SPCR, SPR0);
-#endif
+
 	return c;
 }
-
+/*
 uint8_t rf12_rx()
 {
 	RF12_SELECT;
@@ -84,13 +82,18 @@ uint8_t rf12_rx()
 	RF12_UNSELECT;
 	return c;
 }
+*/
 
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 {
+	bitSet(SPCR, SPR0);
+
 	RF12_SELECT;
 	rf12_byte(highbyte);
 	uint8_t c = rf12_byte(lowbyte);
 	RF12_UNSELECT;
+
+	bitClear(SPCR, SPR0);
 	return c;
 }
 
@@ -104,9 +107,10 @@ void rf12_spi_init()
 	pinMode(SPI_MISO, INPUT);
 	pinMode(SPI_SCK, OUTPUT);
 #ifdef SPCR
+//	SPCR = _BV(SPE) | _BV(MSTR);
 	SPCR = _BV(SPE) | _BV(MSTR);
 	// use clk/2 (2x 1/4th) for sending (and clk/8 for recv, see rf12_xferSlow)
-	SPSR |= _BV(SPI2X);
+//	SPSR |= _BV(SPI2X);
 #else
 	USICR = bit(USIWM0);
 #endif
@@ -116,7 +120,7 @@ void rf12_spi_init()
 
 void rf12_reset_fifo()
 {
-	rf12_cmd(0xCA, 0x80); // clear ef bit
+	rf12_cmd(0xCA, 0x81); // clear ef bit
 	rf12_cmd(0xCA, 0x83); // set ef bit
 }
 
@@ -155,10 +159,10 @@ void rf12_reset_fifo()
 #define RF_PWR_ER  0x80 //  Enables the whole receiver chain: RF front end, baseband, synthesizer, crystal oscillator
 #define RF_PWR_EBB 0x40 // The receiver baseband circuit can be separately switched on
 #define RF_PWR_ET  0x20 // Switches on the PLL, pamp, and starts the transmission (if RF_CONFIG_EL is set)
-#define RF_PWR_ES  0x01 // Turns on the synthesizer
-#define RF_PWR_EX  0x80 // Turns on the crystal oscillator
-#define RF_PWR_EB  0x40 // Enables the low battery detector
-#define RF_PWR_EW  0x20 // Enables the wake-up timer
+#define RF_PWR_ES  0x10 // Turns on the synthesizer
+#define RF_PWR_EX  0x08 // Turns on the crystal oscillator
+#define RF_PWR_EB  0x04 // Enables the low battery detector
+#define RF_PWR_EW  0x02 // Enables the wake-up timer
 #define RF_PWR_DC  0x01 // Disables the clock output (pin 8)
 
 // 3. Frequency Setting Command
@@ -262,13 +266,9 @@ void rf12_setup()
 	rf12_spi_init();
 
 	rf12_cmd(0, 0);
-	while (!rf12_wait_nirq());
-	{
-		delay(200);
-		rf12_cmd(0, 0);
-	}
-
+	delay(200);
 	rf12_cmd(0, 0);
+
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EB | RF_PWR_DC);
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);
 	rf12_cmd(RF_FREQ_CFG, 0x40); // 433.26MHz
@@ -285,4 +285,24 @@ void rf12_setup()
 	rf12_cmd(RF_BATT_CFG, 0x49); // 1.66MHz,3.1V  -- change V
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	rf12_reset_fifo();
+}
+
+void rf12_rx_on()
+{
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+}
+
+void rf12_rx_off()
+{
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+}
+
+void rf12_tx_on()
+{
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_ET|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+}
+
+void rf12_tx_off()
+{
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }

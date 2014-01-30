@@ -9,51 +9,65 @@
 #define freq RF12_433MHZ     //Freq of RF12B can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. Match freq to module
 
 
-char emontx = 'A';
+char payload = 'A';
+unsigned long last_send = 0;
+int bad_count = 0;
 
 void setup() {
 
   pinMode(7, OUTPUT);
-  rf12_initialize(myNodeID,freq,network);   //Initialize RFM12 with settings defined above  
-  Serial.begin(9600);
-  Serial.println("RFM12B Transmitter - Simple demo");
+  rf12_initialize(myNodeID, freq, network);   //Initialize RFM12 with settings defined above  
+  Serial.begin(115200);
+  Serial.read();
+  Serial.println("setup");
+}
 
-
-
- Serial.print("Node: "); 
- Serial.print(myNodeID); 
- Serial.print(" Freq: "); 
- if (freq == RF12_433MHZ) Serial.print("433Mhz");
- if (freq == RF12_868MHZ) Serial.print("868Mhz");
- if (freq == RF12_915MHZ) Serial.print("915Mhz"); 
- Serial.print(" Network: "); 
- Serial.println(network);
-
+void dot()
+{
+  digitalWrite(9, HIGH);
+  delay(100);
+  digitalWrite(9, LOW);
+  delay(100);
 }
 
 void loop()
 {
-  if (emontx++ > 'Z')
-    emontx = 'A';
-  
- 
-  int i = 0;
-
-  while (!rf12_canSend() && i<10)
+  if (rf12_recvDone())
   {
-    rf12_recvDone();
-    i++;
+    payload=*(char*)rf12_data;
+    Serial.print("--rx: ");
+    Serial.println(payload); 
+    if (payload++ > 'Z' || payload < 'A')
+      payload = 'A';
+    dot();
+    dot();
   }
-  
-  rf12_sendStart(0, &emontx, sizeof emontx);
-    
-  Serial.println(emontx); 
-  
-  digitalWrite(7, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(100);               // wait for a second
-  digitalWrite(7, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000); 
-  
-  delay(2000);
+
+  if (millis() - last_send > 2000)
+  {
+    if (rf12_canSend())
+    {
+      rf12_sendStart(0, &payload, sizeof(payload));
+      Serial.print("tx: "); 
+      Serial.println(payload); 
+      dot();
+      last_send = millis();
+      if (payload++ > 'Z' || payload < 'A')
+        payload = 'A';
+      bad_count = 0;
+    }
+    else
+    {
+      bad_count++;
+    }
+  }
+
+ if (bad_count > 100)
+ {
+   setup();
+   bad_count = 0;
+ } 
+
 }
+
 

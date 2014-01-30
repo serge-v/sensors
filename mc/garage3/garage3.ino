@@ -82,6 +82,9 @@ void setup()
   dot();
   dot();
   dot();
+  dot();
+  dot();
+  dot();
   door_opened = millis();
   setup_watchdog(9); // approximately 4 seconds sleep
   // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms 6=1 sec,7=2 sec, 8=4 sec, 9= 8sec

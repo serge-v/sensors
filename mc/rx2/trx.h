@@ -39,6 +39,10 @@ uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_spi_init(void);
 void rf12_reset_fifo(void);
 void rf12_setup(void);
+void rf12_rx_on(void);
+void rf12_rx_off(void);
+void rf12_tx_on(void);
+void rf12_tx_off(void);
 
 #ifdef __cplusplus
 }
