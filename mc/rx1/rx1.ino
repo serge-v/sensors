@@ -9,12 +9,12 @@
 #define freq RF12_433MHZ     //Freq of RF12B can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. Match freq to module
 
 typedef struct { int power1, power2, power3, battery; } PayloadTX;      // create structure - a neat way of packaging data for RF comms
-PayloadTX emontx;  
+char emontx;  
 
 const int emonTx_NodeID=10;            //emonTx node ID
 
 void setup() {
-  pinMode(7, OUTPUT);
+  pinMode(9, OUTPUT);
   rf12_initialize(myNodeID,freq,network);   //Initialize RFM12 with settings defined above  
   Serial.begin(9600); 
   Serial.println("RF12B demo Receiver - Simple demo"); 
@@ -32,24 +32,14 @@ void setup() {
 void loop() {
   
  if (rf12_recvDone()){    
-//  if (rf12_crc == 0 && (rf12_hdr & RF12_HDR_CTL) == 0) {
-    
-    int node_id = (rf12_hdr & 0x1F);		  //extract nodeID from payload
-        
- //   if (node_id == emonTx_NodeID)  {             //check data is coming from node with the corrct ID
-        emontx=*(PayloadTX*) rf12_data;            // Extract the data from the payload 
-       Serial.print("power1: "); Serial.println(emontx.power1); 
-       Serial.print("power2: "); Serial.println(emontx.power2); 
-       Serial.print("power3: "); Serial.println(emontx.power3); 
-       Serial.print("battery: "); Serial.println(emontx.battery); 
-       Serial.println("  "); 
- // }
-// }
-}
+       emontx=*(char*) rf12_data;            // Extract the data from the payload 
+       Serial.print(emontx); 
+       Serial.print(' '); 
+ }
 
-  digitalWrite(7, HIGH);   // turn the LED on (HIGH is the voltage level)
+  digitalWrite(9, HIGH);   // turn the LED on (HIGH is the voltage level)
   delay(100);               // wait for a second
-  digitalWrite(7, LOW);    // turn the LED off by making the voltage LOW
+  digitalWrite(9, LOW);    // turn the LED off by making the voltage LOW
   delay(500); 
 
 }

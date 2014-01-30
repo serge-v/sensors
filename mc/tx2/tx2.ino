@@ -15,7 +15,7 @@ void setup() {
 
   pinMode(7, OUTPUT);
   rf12_initialize(myNodeID,freq,network);   //Initialize RFM12 with settings defined above  
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("RFM12B Transmitter - Simple demo");
 
 
