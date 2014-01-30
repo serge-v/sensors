@@ -1,7 +1,7 @@
 MCU = atmega328p
 F_CPU = 16000000
 
-PORT = /dev/ttyACM0
+PORT = /dev/ttyACM1
 
 RFM12_LIB=../lib/RFM12B
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
