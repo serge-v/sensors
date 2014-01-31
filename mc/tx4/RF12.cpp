@@ -35,9 +35,8 @@ static uint8_t nodeid;              // address of this node
 static uint8_t group;               // network group
 
 
-// my
-
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
+void rf12_reset_fifo();
 
 static uint8_t rf12_byte(uint8_t c)
 {
@@ -62,18 +61,15 @@ static uint8_t rf12_byte(uint8_t c)
 }
 
 volatile uint8_t sidx = 0;
-uint8_t sbuf[8] = 
-{
-	0xAA, 0x2D, 0xD4,
-	0x0A, 0x01, 0x44, 0x18, 0x75,
-	
 
-};
+char rf12_packet[30];
+char* rf12_data = &rf12_packet[5];
+uint8_t rf12_len = 0;
 
-static void rf12_interrupt()
+static void rf12_tx_interrupt()
 {
 	rf12_cmd(0x00, 0x00);
-	rf12_cmd(0xB8, sbuf[sidx]);
+	rf12_cmd(0xB8, rf12_packet[sidx]);
 	sidx++;
 	if (sidx == 8)
 	{
@@ -83,72 +79,141 @@ static void rf12_interrupt()
 	}
 }
 
+// packet format:
+// [0]            : 0xAA
+// [1]            : 0x2D
+// [2]            : 0xD4
+// [3]            : group
+// [4]            : len
+// [5]..[len-3]   : data
+// [len-2][len-1] : crc
+
+static uint8_t verify_packet()
+{
+	uint16_t crc = ~0;
+	crc = _crc16_update(crc, group);
+	
+	crc = _crc16_update(crc, rf12_packet[3]); // group
+	crc = _crc16_update(crc, rf12_packet[4]); // len
+	for (int i = 0; i < rf12_len; i++)
+		crc = _crc16_update(crc, rf12_data[i++]);
+
+	uint16_t expected_crc = *(uint16_t*)(rf12_data + rf12_len + 2);
+
+	if (expected_crc != crc)
+	{
+		Serial.print("buf:");
+		for (int i = 0; i < rf12_len; i++)
+		{
+			Serial.print(' ');
+			Serial.print(rf12_data[i], HEX);
+
+		}
+		Serial.println();
+		Serial.print("len: ");
+		Serial.print(rf12_len, HEX);
+		Serial.print(" ex: ");
+		Serial.print(expected_crc, HEX);
+		Serial.print(" calc: ");
+		Serial.println(crc, HEX);
+	}
+	
+	return (expected_crc == crc);
+}
+
+static void rf12_rx_interrupt()
+{
+	rf12_cmd(0x00, 0x00);
+	uint8_t c = rf12_cmd(0xB0, 0x00);
+	rf12_packet[sidx++] = c;
+
+	Serial.print(c, HEX);
+	Serial.print(' ');
+	if (sidx == 5)
+	{
+		rf12_len = c;
+		Serial.print(" len: ");
+		Serial.println(rf12_len);
+		if (rf12_len > 20)
+		{
+			sidx = 0;
+			rf12_reset_fifo();
+			return;
+		}
+	}
+	else if (sidx == rf12_len + 7)
+	{
+		if (verify_packet())
+		{
+			rf12_data[rf12_len - 1] = 0;
+			Serial.print("  ");
+			Serial.print(rf12_data);
+		}
+		rf12_reset_fifo();
+	}
+
+}
 
 static void respond(char c)
 {
-	attachInterrupt(0, rf12_interrupt, LOW);
+	attachInterrupt(0, rf12_tx_interrupt, LOW);
 
 	sidx = 0;
-	sbuf[5] = c;
+	rf12_packet[5] = c;
 	
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
 	uint8_t idx = 3;
-	crc = _crc16_update(crc, sbuf[idx++]);
-	crc = _crc16_update(crc, sbuf[idx++]);
-	crc = _crc16_update(crc, sbuf[idx++]);
+	crc = _crc16_update(crc, rf12_packet[idx++]);
+	crc = _crc16_update(crc, rf12_packet[idx++]);
+	crc = _crc16_update(crc, rf12_packet[idx++]);
 
-	sbuf[idx++] = crc;
-	sbuf[idx++] = crc >> 8;
+	rf12_packet[idx++] = crc;
+	rf12_packet[idx++] = crc >> 8;
 	
 	rf12_cmd(0x82, 0x3D);
 }
 
 #define WAIT_IRQ_LO() while( IRQ_PORT & _BV(IRQ_PIN) );
 
-static void respond2(char c)
+static void respond2(uint8_t len)
 {
 	sidx = 0;
-	sbuf[5] = c;
 	
+	rf12_packet[sidx++] = 0xAA;
+	rf12_packet[sidx++] = 0x2D;
+	rf12_packet[sidx++] = 0xD4;
+	rf12_packet[sidx++] = 0x0A;
+	rf12_packet[sidx++] = len;
+
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
-	uint8_t idx = 3;
-	crc = _crc16_update(crc, sbuf[idx++]);
-	crc = _crc16_update(crc, sbuf[idx++]);
-	crc = _crc16_update(crc, sbuf[idx++]);
 
-	sbuf[idx++] = crc;
-	sbuf[idx++] = crc >> 8;
+	sidx = 3;
 	
+	for (uint8_t i = 0; i < len + 2; i++)
+		crc = _crc16_update(crc, rf12_packet[sidx++]);
+
+	rf12_packet[sidx++] = crc;
+	rf12_packet[sidx++] = crc >> 8;
+
+	sidx = 0;
 	rf12_cmd(0x82, 0x3D); // start tx
 	
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < (3+2+len+2); i++)
 	{
 		WAIT_IRQ_LO();
-		rf12_cmd(0xB8, sbuf[i]);
+		rf12_cmd(0xB8, rf12_packet[i]);
 		rf12_cmd(0x00, 0x00);
+		sidx++;
 	}
 	
 	rf12_cmd(0x82, 0x0D); // idle
 }
 
-uint8_t cycles = 0;
-
-void rf12_send(char c)
+void rf12_send(uint8_t len)
 {
-	if (cycles % 2 == 0)
-	{
-		Serial.print("r2 ");
-		respond2(c);
-	}
-	else
-	{
-		Serial.print("r2 ");
-		respond2(c);
-	}
-
-	cycles++;
+	respond2(len);
 }
 /*
  * =========================================================
@@ -191,6 +256,7 @@ uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 void rf12_reset_fifo()
 {
 	rf12_cmd(0xCA, 0x81); // clear ef bit
+	sidx = 0;
 	rf12_cmd(0xCA, 0x83); // set ef bit
 }
 
@@ -364,4 +430,13 @@ void rf12_initialize(uint8_t id, uint8_t g)
 	rf12_setup();
 }
 
+void rf12_rx_on()
+{
+	attachInterrupt(0, rf12_rx_interrupt, LOW);
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+}
 
+void rf12_rx_off()
+{
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+}

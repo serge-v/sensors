@@ -1,7 +1,7 @@
 MCU = atmega328p
 F_CPU = 16000000
 
-PORT = /dev/ttyACM1
+PORT = /dev/ttyACM0
 
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)

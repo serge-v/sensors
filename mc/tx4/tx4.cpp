@@ -3,31 +3,48 @@
 #define myNodeID 10          //node ID of tx (range 0-30)
 #define network     212      //network group (can be in the range 1-250).
 
-void rf12_initialize(uint8_t id, uint8_t g);
-void rf12_send(char c);
+const uint8_t led_pin = 9;
 
-char ch = 'A';
+void rf12_initialize(uint8_t id, uint8_t g);
+void rf12_send(uint8_t len);
+void rf12_rx_on(void);
+void rf12_rx_off(void);
+extern char* rf12_data;
+
+static void dot()
+{
+	digitalWrite(led_pin, HIGH);
+	delay(100);
+	digitalWrite(led_pin, LOW);
+	delay(100);
+}
 
 void setup()
 {
-  pinMode(7, OUTPUT);
-  rf12_initialize(myNodeID, network);
-  Serial.begin(115200);
-  Serial.println("started");
+	pinMode(led_pin, OUTPUT);
+	rf12_initialize(myNodeID, network);
+	Serial.begin(115200);
+	Serial.println("tx4 started");
+	rf12_rx_on();
 }
+
+unsigned long last_send = 0;
 
 void loop()
 {
-  if (ch++ > 'Z')
-    ch = 'A';
-  
-  rf12_send(ch);
-    
-  Serial.println(ch); 
-  
-  digitalWrite(7, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(100);               // wait for a second
-  digitalWrite(7, LOW);    // turn the LED off by making the voltage LOW
-  delay(2000);
+/*	if (millis() - last_send > 10000)
+	{
+		rf12_rx_off();
+		unsigned long time = millis();
+		uint8_t n = snprintf(rf12_data, 20, "%d,t,%lu\n", led_pin, time);
+		rf12_data[n] = 0; // rf12_send will override it with crc
+		Serial.print(rf12_data);
+		rf12_send(n);
+		last_send = millis();
+		dot();
+		dot();
+		rf12_rx_on();
+	}
+*/	
+	delay(500);
 }
-
