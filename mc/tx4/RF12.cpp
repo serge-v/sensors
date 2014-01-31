@@ -133,55 +133,14 @@ static void respond2(char c)
 	rf12_cmd(0x82, 0x0D); // idle
 }
 
-#define MISO_LEVEL() (PINB & _BV(SPI_MISO))
-#define MOSI_LOW() PORTB &= ~_BV(SPI_MOSI)
-
-uint8_t rf12_read_status_MSB(void)
-{
-    RF12_SELECT;
-    MOSI_LOW();
-    asm volatile("nop");
-    uint8_t c = (MISO_LEVEL());
-    RF12_UNSELECT;
-    return c;
-}
-
-static void respond3(char c)
-{
-	sidx = 0;
-	sbuf[5] = c;
-	
-	uint16_t crc = ~0;
-	crc = _crc16_update(crc, group);
-	uint8_t idx = 3;
-	crc = _crc16_update(crc, sbuf[idx++]);
-	crc = _crc16_update(crc, sbuf[idx++]);
-	crc = _crc16_update(crc, sbuf[idx++]);
-
-	sbuf[idx++] = crc;
-	sbuf[idx++] = crc >> 8;
-	
-	rf12_cmd(0x82, 0x3D); // start tx
-	
-	for (int i = 0; i < 8; i++)
-	{
-		while (!rf12_read_status_MSB());
-
-		rf12_cmd(0xB8, sbuf[i]);
-		rf12_cmd(0x00, 0x00);
-	}
-	
-	rf12_cmd(0x82, 0x0D); // idle
-}
-
 uint8_t cycles = 0;
 
 void rf12_send(char c)
 {
 	if (cycles % 2 == 0)
 	{
-		Serial.print("r1 ");
-		respond(c);
+		Serial.print("r2 ");
+		respond2(c);
 	}
 	else
 	{
