@@ -10,6 +10,9 @@ void rf12_send(uint8_t len);
 void rf12_rx_on(void);
 void rf12_rx_off(void);
 extern char* rf12_data;
+extern uint8_t rcv_done;
+extern uint8_t rf12_len;
+void print_buf(void);
 
 static void dot()
 {
@@ -32,7 +35,7 @@ unsigned long last_send = 0;
 
 void loop()
 {
-/*	if (millis() - last_send > 10000)
+	if (millis() - last_send > 10000)
 	{
 		rf12_rx_off();
 		unsigned long time = millis();
@@ -45,6 +48,12 @@ void loop()
 		dot();
 		rf12_rx_on();
 	}
-*/	
-	delay(500);
+	
+	if (rcv_done)
+	{
+		Serial.print("  ");
+		print_buf();
+		rf12_rx_on();
+	}
+
 }

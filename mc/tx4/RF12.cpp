@@ -60,11 +60,22 @@ static uint8_t rf12_byte(uint8_t c)
 #endif
 }
 
-volatile uint8_t sidx = 0;
+// packet format:
+// [0]            : 0xAA
+// [1]            : 0x2D
+// [2]            : 0xD4
+// [3]            : id   -- rf12_rx_buf
+// [4]            : len
+// [5]..[len-3]   : data -- rf12_data
+// [len-2][len-1] : crc
 
 char rf12_packet[30];
+char* rf12_rx_buf = &rf12_packet[3]; // 3 preambe bytes are consumed by hardware
 char* rf12_data = &rf12_packet[5];
-uint8_t rf12_len = 0;
+
+volatile uint8_t rf12_len = 0;
+volatile uint8_t sidx = 0;
+volatile uint8_t rcv_done = 0;
 
 static void rf12_tx_interrupt()
 {
@@ -79,39 +90,23 @@ static void rf12_tx_interrupt()
 	}
 }
 
-// packet format:
-// [0]            : 0xAA
-// [1]            : 0x2D
-// [2]            : 0xD4
-// [3]            : group
-// [4]            : len
-// [5]..[len-3]   : data
-// [len-2][len-1] : crc
-
-static uint8_t verify_packet()
+uint8_t verify_data()
 {
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
 	
-	crc = _crc16_update(crc, rf12_packet[3]); // group
-	crc = _crc16_update(crc, rf12_packet[4]); // len
-	for (int i = 0; i < rf12_len; i++)
-		crc = _crc16_update(crc, rf12_data[i++]);
+	crc = _crc16_update(crc, rf12_rx_buf[0]); // id
+	crc = _crc16_update(crc, rf12_rx_buf[1]); // len
+	
+	int i = 0;
+	for (i = 0; i < rf12_len; i++)
+		crc = _crc16_update(crc, rf12_data[i]);
 
-	uint16_t expected_crc = *(uint16_t*)(rf12_data + rf12_len + 2);
+	uint16_t expected_crc = rf12_data[i++];
+	expected_crc |= rf12_data[i] << 8;
 
 	if (expected_crc != crc)
 	{
-		Serial.print("buf:");
-		for (int i = 0; i < rf12_len; i++)
-		{
-			Serial.print(' ');
-			Serial.print(rf12_data[i], HEX);
-
-		}
-		Serial.println();
-		Serial.print("len: ");
-		Serial.print(rf12_len, HEX);
 		Serial.print(" ex: ");
 		Serial.print(expected_crc, HEX);
 		Serial.print(" calc: ");
@@ -125,33 +120,46 @@ static void rf12_rx_interrupt()
 {
 	rf12_cmd(0x00, 0x00);
 	uint8_t c = rf12_cmd(0xB0, 0x00);
-	rf12_packet[sidx++] = c;
+	rf12_rx_buf[sidx++] = c;
 
-	Serial.print(c, HEX);
-	Serial.print(' ');
-	if (sidx == 5)
+	if (sidx == 2)
 	{
 		rf12_len = c;
-		Serial.print(" len: ");
-		Serial.println(rf12_len);
 		if (rf12_len > 20)
 		{
+			rcv_done = 1;
 			sidx = 0;
 			rf12_reset_fifo();
-			return;
 		}
+		return;
 	}
-	else if (sidx == rf12_len + 7)
+
+	if (sidx == rf12_len + 4)
 	{
-		if (verify_packet())
-		{
-			rf12_data[rf12_len - 1] = 0;
-			Serial.print("  ");
-			Serial.print(rf12_data);
-		}
+		rcv_done = 1;
 		rf12_reset_fifo();
 	}
 
+}
+
+void print_buf()
+{
+	if (verify_data())
+	{
+		rf12_data[rf12_len - 1] = 0;
+		Serial.print("  ");
+		Serial.println(rf12_data);
+	}
+	else
+	{
+		for (int i = 0; i < rf12_len+4; i++)
+		{
+			Serial.print(rf12_rx_buf[i], HEX);
+			Serial.print(' ');
+		}
+		Serial.print(" len: ");
+		Serial.println(rf12_len);
+	}
 }
 
 static void respond(char c)
@@ -179,7 +187,8 @@ static void respond(char c)
 static void respond2(uint8_t len)
 {
 	sidx = 0;
-	
+	rf12_len = len;
+
 	rf12_packet[sidx++] = 0xAA;
 	rf12_packet[sidx++] = 0x2D;
 	rf12_packet[sidx++] = 0xD4;
@@ -432,6 +441,9 @@ void rf12_initialize(uint8_t id, uint8_t g)
 
 void rf12_rx_on()
 {
+	sidx = 0;
+	rf12_len = 0;
+	rcv_done = 0;
 	attachInterrupt(0, rf12_rx_interrupt, LOW);
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
@@ -439,4 +451,5 @@ void rf12_rx_on()
 void rf12_rx_off()
 {
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+	detachInterrupt(0);
 }
