@@ -77,6 +77,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 # Default target.
 all: build
+	@echo $(TARGET): $(MCU) $(( $(F_CPU) / 1000000 ))MHz on $(PORT)
 
 build: elf hex eep
 
@@ -119,21 +120,18 @@ $(TARGET).elf: $(OBJ)
 
 
 # Compile: create object files from C++ source files.
-%.o: $(RFM12_LIB)/%.cpp
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
-
 %.o: $(ARDUINO)/%.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 2>&1 | colorgcc
 
 %.o: %.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 2>&1 | colorgcc
 
 # Compile: create object files from C source files.
 %.o: $(ARDUINO)/%.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
+	$(CC) -c $(ALL_CFLAGS) $< -o $@ 2>&1 | colorgcc
 
 %.o: %.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
+	$(CC) -c $(ALL_CFLAGS) $< -o $@ 2>&1 | colorgcc
 
 # Compile: create assembler files from C source files.
 .cpp.s:

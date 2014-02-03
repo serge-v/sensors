@@ -37,6 +37,7 @@ static uint8_t group;               // network group
 
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_reset_fifo();
+void rf12_rx_off();
 
 static uint8_t rf12_byte(uint8_t c)
 {
@@ -60,6 +61,15 @@ static uint8_t rf12_byte(uint8_t c)
 #endif
 }
 
+uint16_t rf12_read_status()
+{
+	RF12_SELECT;
+	uint16_t c = rf12_byte(0x00) << 8;
+	c |= rf12_byte(0x00);
+	RF12_UNSELECT;
+	return c;
+}
+
 // packet format:
 // [0]            : 0xAA
 // [1]            : 0x2D
@@ -69,12 +79,13 @@ static uint8_t rf12_byte(uint8_t c)
 // [5]..[len-3]   : data -- rf12_data
 // [len-2][len-1] : crc
 
-char rf12_packet[30];
-char* rf12_rx_buf = &rf12_packet[3]; // 3 preambe bytes are consumed by hardware
-char* rf12_data = &rf12_packet[5];
+uint8_t rf12_packet[30];
+uint8_t* rf12_rx_buf = &rf12_packet[3]; // 3 preambe bytes are consumed by hardware
+uint8_t* rf12_data = &rf12_packet[5];
 
 volatile uint8_t rf12_len = 0;
 volatile uint8_t sidx = 0;
+volatile uint8_t receiving = 0;
 volatile uint8_t rcv_done = 0;
 
 static void rf12_tx_interrupt()
@@ -82,12 +93,6 @@ static void rf12_tx_interrupt()
 	rf12_cmd(0x00, 0x00);
 	rf12_cmd(0xB8, rf12_packet[sidx]);
 	sidx++;
-	if (sidx == 8)
-	{
-		rf12_cmd(0x82, 0x0D); // idle
-//		rf12_cmd(0xB8, 0xAA);
-		detachInterrupt(0);
-	}
 }
 
 uint8_t verify_data()
@@ -95,15 +100,12 @@ uint8_t verify_data()
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
 	
-	crc = _crc16_update(crc, rf12_rx_buf[0]); // id
-	crc = _crc16_update(crc, rf12_rx_buf[1]); // len
-	
 	int i = 0;
-	for (i = 0; i < rf12_len; i++)
-		crc = _crc16_update(crc, rf12_data[i]);
+	for (i = 0; i < rf12_len + 2; i++)
+		crc = _crc16_update(crc, rf12_rx_buf[i]);
 
-	uint16_t expected_crc = rf12_data[i++];
-	expected_crc |= rf12_data[i] << 8;
+	uint16_t expected_crc = rf12_rx_buf[i++];
+	expected_crc |= rf12_rx_buf[i] << 8;
 
 	if (expected_crc != crc)
 	{
@@ -118,37 +120,57 @@ uint8_t verify_data()
 
 static void rf12_rx_interrupt()
 {
-	rf12_cmd(0x00, 0x00);
+	if (rcv_done)
+		return;
+
+	uint16_t st = rf12_read_status();
+	if (!(st & 0x8000))
+	{
+		Serial.print("rst:");
+		Serial.println(st, HEX);
+		return;
+	}
+
 	uint8_t c = rf12_cmd(0xB0, 0x00);
 	rf12_rx_buf[sidx++] = c;
+
+	if (sidx == 1)
+	{
+		receiving = 1;
+		return;
+	}
 
 	if (sidx == 2)
 	{
 		rf12_len = c;
-		if (rf12_len > 20)
+		if (rf12_len == 0 || rf12_len > 20)
 		{
+			rf12_len = 0;
+			rf12_rx_off();
 			rcv_done = 1;
-			sidx = 0;
-			rf12_reset_fifo();
 		}
 		return;
 	}
 
 	if (sidx == rf12_len + 4)
 	{
+		rf12_rx_off();
 		rcv_done = 1;
-		rf12_reset_fifo();
 	}
-
 }
 
 void print_buf()
 {
+	if (rf12_len == 0)
+		return;
+
 	if (verify_data())
 	{
-		rf12_data[rf12_len - 1] = 0;
-		Serial.print("  ");
-		Serial.println(rf12_data);
+		Serial.print("    len: ");
+		Serial.print(rf12_len);
+		Serial.print(" data: ");
+		rf12_data[rf12_len] = 0;
+		Serial.print((char*)rf12_data);
 	}
 	else
 	{
@@ -162,24 +184,55 @@ void print_buf()
 	}
 }
 
-static void respond(char c)
+static void respond(uint8_t len)
 {
 	attachInterrupt(0, rf12_tx_interrupt, LOW);
 
-	sidx = 0;
-	rf12_packet[5] = c;
-	
+	rf12_len = len;
+	uint8_t i = 0;
+
+	rf12_packet[i++] = 0xAA;
+	rf12_packet[i++] = 0x2D;
+	rf12_packet[i++] = 0xD4;
+	rf12_packet[i++] = 0x0A;
+	rf12_packet[i++] = len;
+
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
-	uint8_t idx = 3;
-	crc = _crc16_update(crc, rf12_packet[idx++]);
-	crc = _crc16_update(crc, rf12_packet[idx++]);
-	crc = _crc16_update(crc, rf12_packet[idx++]);
 
-	rf12_packet[idx++] = crc;
-	rf12_packet[idx++] = crc >> 8;
+	for (i = 0; i < len + 2; i++)
+		crc = _crc16_update(crc, rf12_rx_buf[i]);
+
+	rf12_rx_buf[i++] = crc;
+	rf12_rx_buf[i] = crc >> 8;
 	
-	rf12_cmd(0x82, 0x3D);
+	// preamble(3) + (id, len)(2) + data len + crc(2)
+	const uint8_t send_len = 3 + 2 + len + 2;
+	sidx = 0;
+
+	// fill fifo with preamble before turning on tx
+	rf12_cmd(0xB8, 0xAA);
+	rf12_cmd(0xB8, 0xAA);
+
+	rf12_cmd(0x82, 0x3D); // start tx
+
+	while (sidx < send_len);
+
+	detachInterrupt(0);
+	
+	delay(100);
+/*
+	Serial.print("sent: ");
+	for (i = 0; i < send_len; i++)
+	{
+		Serial.print(rf12_packet[i], HEX);
+		Serial.print(" ");
+	}
+	Serial.print("send_len: ");
+	Serial.println(send_len);
+*/	
+	rf12_cmd(0x82, 0x0D); // idle
+
 }
 
 #define WAIT_IRQ_LO() while( IRQ_PORT & _BV(IRQ_PIN) );
@@ -188,41 +241,55 @@ static void respond2(uint8_t len)
 {
 	sidx = 0;
 	rf12_len = len;
+	uint8_t i = 0;
 
-	rf12_packet[sidx++] = 0xAA;
-	rf12_packet[sidx++] = 0x2D;
-	rf12_packet[sidx++] = 0xD4;
-	rf12_packet[sidx++] = 0x0A;
-	rf12_packet[sidx++] = len;
+	rf12_packet[i++] = 0xAA;
+	rf12_packet[i++] = 0x2D;
+	rf12_packet[i++] = 0xD4;
+	rf12_packet[i++] = 0x0A;
+	rf12_packet[i++] = len;
 
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
 
-	sidx = 3;
-	
-	for (uint8_t i = 0; i < len + 2; i++)
-		crc = _crc16_update(crc, rf12_packet[sidx++]);
+	for (i = 0; i < len + 2; i++)
+		crc = _crc16_update(crc, rf12_rx_buf[i]);
 
-	rf12_packet[sidx++] = crc;
-	rf12_packet[sidx++] = crc >> 8;
+	rf12_rx_buf[i++] = crc;
+	rf12_rx_buf[i] = crc >> 8;
 
-	sidx = 0;
 	rf12_cmd(0x82, 0x3D); // start tx
 	
-	for (int i = 0; i < (3+2+len+2); i++)
+	// preamble(3) + (id, len)(2) + data len + crc(2)
+	const uint8_t send_len = 3 + 2 + len + 2;
+
+	for (i = 0; i < send_len; i++)
 	{
 		WAIT_IRQ_LO();
 		rf12_cmd(0xB8, rf12_packet[i]);
 		rf12_cmd(0x00, 0x00);
-		sidx++;
 	}
 	
+	WAIT_IRQ_LO();
+	rf12_cmd(0xB8, 0x00);
+	rf12_cmd(0x00, 0x00);
+
 	rf12_cmd(0x82, 0x0D); // idle
+/*
+	Serial.print("sent: ");
+	for (i = 0; i < send_len; i++)
+	{
+		Serial.print(rf12_packet[i], HEX);
+		Serial.print(" ");
+	}
+	Serial.print("send_len: ");
+	Serial.println(send_len);
+*/
 }
 
 void rf12_send(uint8_t len)
 {
-	respond2(len);
+	respond(len);
 }
 /*
  * =========================================================
@@ -441,6 +508,7 @@ void rf12_initialize(uint8_t id, uint8_t g)
 
 void rf12_rx_on()
 {
+	rf12_reset_fifo();
 	sidx = 0;
 	rf12_len = 0;
 	rcv_done = 0;
@@ -450,6 +518,7 @@ void rf12_rx_on()
 
 void rf12_rx_off()
 {
+	detachInterrupt(0); // detach before disabling rx, otherwise it will stack in the interrupt
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
-	detachInterrupt(0);
+	receiving = 0;
 }

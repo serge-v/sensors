@@ -36,15 +36,14 @@ void loop()
 		uint8_t len = rf12_len;
 		if (len > 19)
 			len = 19;
-		rf12_data[19] = 0;
-
 		memcpy(s, (const char*)rf12_data, len);
+		s[len] = 0;
 		Serial.print("  ");
-		Serial.println(s);
+		Serial.print(s);
 		dot();
 	}
 	
-	if (millis() - last_send > 10000 && rf12_canSend())
+	if (millis() - last_send > 3000 && rf12_canSend())
 	{
 		unsigned long time = millis();
 		uint8_t n = sprintf(s, "%d,t,%lu\n", led_pin, time);

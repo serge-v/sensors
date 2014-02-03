@@ -78,6 +78,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 # Default target.
 all: build
+	@echo $(TARGET): $(MCU) $(( $(F_CPU) / 1000000 ))MHz on $(PORT)
 
 build: elf hex eep
 
@@ -117,7 +118,6 @@ upload: $(TARGET).hex $(TARGET).eep
 # Link: create ELF output file from object files.
 $(TARGET).elf: $(OBJ)
 	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
-
 
 # Compile: create object files from C++ source files.
 %.o: $(RFM12_LIB)/%.cpp
