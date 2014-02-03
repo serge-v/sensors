@@ -13,6 +13,7 @@ void rf12_rx_off(void);
 extern char* rf12_data;
 extern uint8_t receiving;
 extern uint8_t rcv_done;
+extern uint8_t rf12_debug;
 extern uint8_t rf12_len;
 void print_buf(void);
 
@@ -37,6 +38,7 @@ void setup()
 }
 
 unsigned long last_send = 0;
+unsigned long interval = 10000;
 
 struct settings
 {
@@ -45,8 +47,8 @@ struct settings
 };
 
 struct settings sts = {
-	.tx_enabled = 1,
-	.rx_enabled = 1
+	.tx_enabled = 0,
+	.rx_enabled = 0
 };
 
 void loop()
@@ -56,6 +58,18 @@ void loop()
 		byte c = Serial.read();
 		switch (c)
 		{
+		case 'g':
+			rf12_debug = !rf12_debug;
+			Serial.print("debug: "); Serial.println(rf12_debug);
+			break;
+		case '1':
+			interval -= 1000;
+			Serial.print("interval: "); Serial.println(interval);
+			break;
+		case '2':
+			interval += 1000;
+			Serial.print("interval: "); Serial.println(interval);
+			break;
 		case 't':
 			sts.tx_enabled = !sts.tx_enabled;
 			Serial.print("tx: "); Serial.println(sts.tx_enabled);
@@ -67,7 +81,7 @@ void loop()
 		}
 	}
 
-	if (sts.tx_enabled && !receiving && millis() - last_send > 13000)
+	if (sts.tx_enabled && !receiving && millis() - last_send > interval)
 	{
 		if (sts.rx_enabled)
 			rf12_rx_off();
@@ -88,7 +102,6 @@ void loop()
 	
 	if (sts.rx_enabled && rcv_done)
 	{
-		Serial.print("  ");
 		print_buf();
 		dot();
 		rf12_rx_on();

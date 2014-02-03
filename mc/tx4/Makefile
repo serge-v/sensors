@@ -1,7 +1,7 @@
 MCU = atmega328p
 F_CPU = 16000000
 
-PORT = /dev/ttyACM0
+PORT = /dev/ttyACM1
 
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
@@ -91,9 +91,8 @@ sym: $(TARGET).sym
 upload: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
-	sleep 1
-	echo dd > $(AVRDUDE_PORT)
-
+	sleep 5
+	echo r > $(AVRDUDE_PORT)
 
 .SUFFIXES: .elf .hex .eep .lss .sym
 

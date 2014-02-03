@@ -87,6 +87,7 @@ volatile uint8_t rf12_len = 0;
 volatile uint8_t sidx = 0;
 volatile uint8_t receiving = 0;
 volatile uint8_t rcv_done = 0;
+uint8_t rf12_debug = 0;
 
 static void rf12_tx_interrupt()
 {
@@ -107,7 +108,7 @@ uint8_t verify_data()
 	uint16_t expected_crc = rf12_rx_buf[i++];
 	expected_crc |= rf12_rx_buf[i] << 8;
 
-	if (expected_crc != crc)
+	if (expected_crc != crc && rf12_debug)
 	{
 		Serial.print(" ex: ");
 		Serial.print(expected_crc, HEX);
@@ -126,8 +127,11 @@ static void rf12_rx_interrupt()
 	uint16_t st = rf12_read_status();
 	if (!(st & 0x8000))
 	{
-		Serial.print("rst:");
-		Serial.println(st, HEX);
+		if (rf12_debug)
+		{
+			Serial.print("rst:");
+			Serial.println(st, HEX);
+		}
 		return;
 	}
 
@@ -161,7 +165,7 @@ static void rf12_rx_interrupt()
 
 void print_buf()
 {
-	if (rf12_len == 0)
+	if (!rf12_debug && rf12_len == 0)
 		return;
 
 	if (verify_data())
@@ -221,16 +225,19 @@ static void respond(uint8_t len)
 	detachInterrupt(0);
 	
 	delay(100);
-/*
-	Serial.print("sent: ");
-	for (i = 0; i < send_len; i++)
+
+	if (rf12_debug)
 	{
-		Serial.print(rf12_packet[i], HEX);
-		Serial.print(" ");
+		Serial.print("sent: ");
+		for (i = 0; i < send_len; i++)
+		{
+			Serial.print(rf12_packet[i], HEX);
+			Serial.print(" ");
+		}
+		Serial.print("send_len: ");
+		Serial.println(send_len);
 	}
-	Serial.print("send_len: ");
-	Serial.println(send_len);
-*/	
+	
 	rf12_cmd(0x82, 0x0D); // idle
 
 }
@@ -275,16 +282,18 @@ static void respond2(uint8_t len)
 	rf12_cmd(0x00, 0x00);
 
 	rf12_cmd(0x82, 0x0D); // idle
-/*
-	Serial.print("sent: ");
-	for (i = 0; i < send_len; i++)
+
+	if (rf12_debug)
 	{
-		Serial.print(rf12_packet[i], HEX);
-		Serial.print(" ");
+		Serial.print("sent: ");
+		for (i = 0; i < send_len; i++)
+		{
+			Serial.print(rf12_packet[i], HEX);
+			Serial.print(" ");
+		}
+		Serial.print("send_len: ");
+		Serial.println(send_len);
 	}
-	Serial.print("send_len: ");
-	Serial.println(send_len);
-*/
 }
 
 void rf12_send(uint8_t len)
