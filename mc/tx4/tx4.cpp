@@ -42,44 +42,69 @@ unsigned long interval = 10000;
 
 struct settings
 {
+	uint8_t auto_start: 1;
 	uint8_t tx_enabled: 1;
 	uint8_t rx_enabled: 1;
+	uint8_t debug: 1;
+	uint8_t master: 1;
 };
 
 struct settings sts = {
+	.auto_start = 1,
 	.tx_enabled = 0,
-	.rx_enabled = 0
+	.rx_enabled = 0,
+	.debug = 0
 };
+
+static void handle_serial()
+{
+	sts.auto_start = 0;
+
+	byte c = Serial.read();
+	switch (c)
+	{
+	case 'i': // init
+		rf12_debug = 0;
+		interval = 10000;
+		sts.rx_enabled = 0;
+		sts.tx_enabled = 0;
+		sts.auto_start = 1;
+		last_send = millis();
+		Serial.println("init");
+		break;
+	case 'g':
+		rf12_debug = !rf12_debug;
+		sts.debug = rf12_debug; 
+		Serial.print("debug: ");
+		Serial.println(rf12_debug);
+		break;
+	case '1':
+		interval -= 1000;
+		Serial.print("interval: ");
+		Serial.println(interval);
+		break;
+	case '2':
+		interval += 1000;
+		Serial.print("interval: ");
+		Serial.println(interval);
+		break;
+	case 't':
+		sts.tx_enabled = !sts.tx_enabled;
+		Serial.print("tx: ");
+		Serial.println(sts.tx_enabled);
+		break;
+	case 'r':
+		sts.rx_enabled = !sts.rx_enabled;
+		Serial.print("rx: ");
+		Serial.println(sts.rx_enabled);
+		break;
+	}
+}
 
 void loop()
 {
 	if (Serial.available())
-	{
-		byte c = Serial.read();
-		switch (c)
-		{
-		case 'g':
-			rf12_debug = !rf12_debug;
-			Serial.print("debug: "); Serial.println(rf12_debug);
-			break;
-		case '1':
-			interval -= 1000;
-			Serial.print("interval: "); Serial.println(interval);
-			break;
-		case '2':
-			interval += 1000;
-			Serial.print("interval: "); Serial.println(interval);
-			break;
-		case 't':
-			sts.tx_enabled = !sts.tx_enabled;
-			Serial.print("tx: "); Serial.println(sts.tx_enabled);
-			break;
-		case 'r':
-			sts.rx_enabled = !sts.rx_enabled;
-			Serial.print("rx: "); Serial.println(sts.rx_enabled);
-			break;
-		}
-	}
+		handle_serial();
 
 	if (sts.tx_enabled && !receiving && millis() - last_send > interval)
 	{
@@ -106,5 +131,16 @@ void loop()
 		dot();
 		rf12_rx_on();
 	}
-
+	
+	if (sts.auto_start && !sts.rx_enabled && millis() - last_send > 30000)
+	{
+		sts.rx_enabled = 1;
+		Serial.println("rx auto enabled");
+	}
+	else if (sts.auto_start && !sts.tx_enabled && millis() - last_send > 35000)
+	{
+		sts.auto_start = 0;
+		sts.tx_enabled = 1;
+		Serial.println("tx auto enabled");
+	}
 }

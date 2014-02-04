@@ -1,7 +1,8 @@
 MCU = atmega328p
 F_CPU = 16000000
 
-PORT = /dev/ttyACM1
+PORT1 = /dev/ttyACM0
+PORT2 = /dev/ttyACM1
 
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
@@ -46,9 +47,10 @@ LDFLAGS = -Wl,--gc-sections
 
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PROGRAMMER = arduino
-AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
+AVRDUDE_FLAGS1 = -F -p $(MCU) -P $(PORT1) -c $(AVRDUDE_PROGRAMMER) -D \
+  -b $(UPLOAD_RATE)
+AVRDUDE_FLAGS2 = -F -p $(MCU) -P $(PORT2) -c $(AVRDUDE_PROGRAMMER) -D \
   -b $(UPLOAD_RATE)
 
 # Program settings
@@ -88,11 +90,17 @@ lss: $(TARGET).lss
 sym: $(TARGET).sym
 
 # Program the device.
-upload: $(TARGET).hex $(TARGET).eep
-	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
-	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
+u1: $(TARGET).hex $(TARGET).eep
+	-kill `pgrep -f "cat $(PORT1)"`
+	$(AVRDUDE) $(AVRDUDE_FLAGS1) $(AVRDUDE_WRITE_FLASH)
 	sleep 5
-	echo r > $(AVRDUDE_PORT)
+	echo r111t > $(PORT1)
+
+u2: $(TARGET).hex $(TARGET).eep
+	-kill `pgrep -f "cat $(PORT2)"`
+	$(AVRDUDE) $(AVRDUDE_FLAGS2) $(AVRDUDE_WRITE_FLASH)
+	sleep 5
+	echo r1111t > $(PORT2)
 
 .SUFFIXES: .elf .hex .eep .lss .sym
 

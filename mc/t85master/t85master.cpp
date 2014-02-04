@@ -46,11 +46,11 @@
 #include "pins_arduino.h"
 #include <Arduino.h>
 
-#define RESET     SS
+#define RESET     8
 
 #define LED_HB    9
-#define LED_ERR   8
-#define LED_PMODE 7
+#define LED_ERR   7
+#define LED_PMODE 6
 #define PROG_FLICKER true
 
 #define HWVER 2
@@ -565,17 +565,17 @@ int avrisp()
 		empty_reply();
 		break;
 
-	case 0x60: //STK_PROG_FLASH
+	case 0x60: //STK_PROG_FLASH '`'
 		getch();
 		getch();
 		empty_reply();
 		break;
-	case 0x61: //STK_PROG_DATA
+	case 0x61: //STK_PROG_DATA 'a'
 		getch();
 		empty_reply();
 		break;
 
-	case 0x64: //STK_PROG_PAGE
+	case 0x64: //STK_PROG_PAGE 'd'
 		program_page();
 		break;
 

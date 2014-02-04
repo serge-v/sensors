@@ -8,7 +8,6 @@
 #define network     212      //network group (can be in the range 1-250).
 #define freq RF12_433MHZ     //Freq of RF12B can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. Match freq to module
 
-typedef struct { int power1, power2, power3, battery; } PayloadTX;      // create structure - a neat way of packaging data for RF comms
 char emontx;  
 
 const int emonTx_NodeID=10;            //emonTx node ID
