@@ -1,29 +1,31 @@
-MCU = atmega328p
-F_CPU = 16000000
+MCU = attiny85
+F_CPU = 1000000
 
 PORT = /dev/ttyACM0
 
-RFM12_LIB=../lib/RFM12B
-ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(RFM12_LIB)
+ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
+CINCS = -I$(ARDUINO)
 
-TARGET = t85master
+TARGET = blink
 
 SRC = \
+    $(ARDUINO)/pins_arduino.c \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/wiring_analog.c \
-#    $(ARDUINO)/WInterrupts.c
+    $(ARDUINO)/WInterrupts.c
 
 CXXSRC = $(TARGET).cpp \
+    debug.cpp \
+    rf12.cpp \
     $(ARDUINO)/main.cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
-#    $(ARDUINO)/WString.cpp \
-#    $(RFM12_LIB)/RFM12B.cpp
+    $(ARDUINO)/WString.cpp \
+    $(ARDUINO)/TinyDebugSerial.cpp \
+    $(ARDUINO)/TinyDebugSerial9600.cpp
 
 FORMAT = ihex
-UPLOAD_RATE = 115200
+UPLOAD_RATE = 19200
 
 MAKEFILE = Makefile
 
@@ -43,22 +45,21 @@ CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 
 CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
 CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) -ffunction-sections -fdata-sections
-LDFLAGS = -Wl,--gc-sections
+LDFLAGS = -Wl,--gc-sections -ffunction-sections
 
 
 # Programming support using avrdude. Settings and variables.
-AVRDUDE_PROGRAMMER = arduino
+AVRDUDE_PROGRAMMER = stk500v1
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
+AVRDUDE_FLAGS = \
+  -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
   -b $(UPLOAD_RATE)
 
-#-C/usr/share/arduino/hardware/tools/avrdude.conf 
-#-patmega328p 
-#-carduino -P/dev/ttyUSB0 
-#-b115200 -D 
-#-Uflash:w:1.hex:i
+#-C/usr/share/arduino/hardware/tools/avrdude.conf
+#-pattiny85 -cstk500v1 -P/dev/ttyACM0 -b19200 -Uflash:w:1.hex:i 
 
+  
 # Program settings
 CC = avr-gcc
 CXX = avr-g++
@@ -85,18 +86,18 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 # Default target.
 all: build
+	@echo "\033[32mOK\033[0m"
 
-build: elf hex eep
+build: elf hex
 
 elf: $(TARGET).elf
 hex: $(TARGET).hex
-eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
 # Program the device.
-upload: $(TARGET).hex $(TARGET).eep
-	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
+upload: $(TARGET).hex
+	-kill `pgrep -f "cat $(PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 
 .SUFFIXES: .elf .hex .eep .lss .sym
@@ -104,29 +105,17 @@ upload: $(TARGET).hex $(TARGET).eep
 .elf.hex:
 	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
 
-.elf.eep:
-	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-	--change-section-lma .eeprom=0 -O $(FORMAT) $< $@
-
-# Create extended listing file from ELF output file.
 .elf.lss:
 	$(OBJDUMP) -h -S $< > $@
 
-# Create a symbol table from ELF output file.
 .elf.sym:
 	$(NM) -n $< > $@
 
-
-
-# Link: create ELF output file from object files.
 $(TARGET).elf: $(OBJ)
 	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
 
 
 # Compile: create object files from C++ source files.
-%.o: $(RFM12_LIB)/%.cpp
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
-
 %.o: $(ARDUINO)/%.cpp
 	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
 
@@ -158,7 +147,8 @@ $(TARGET).elf: $(OBJ)
 clean:
 	$(REMOVE) $(TARGET).hex $(TARGET).eep $(TARGET).cof $(TARGET).elf \
 	$(TARGET).map $(TARGET).sym $(TARGET).lss \
-	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
+	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d) \
+	last_build~.conf this_build~.conf
 
 depend:
 	if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \

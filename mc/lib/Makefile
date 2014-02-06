@@ -1,33 +1,18 @@
 MCU = atmega328p
+MCU = attiny85
 F_CPU = 16000000
 
-PORT = /dev/ttyACM0
-
-RFM12_LIB=../lib/RFM12B
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(RFM12_LIB)
+CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
 
-TARGET = t85master
+TARGET = libtest
 
-SRC = \
-    $(ARDUINO)/wiring.c \
-    $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/wiring_analog.c \
-#    $(ARDUINO)/WInterrupts.c
+SRC =
 
-CXXSRC = $(TARGET).cpp \
-    $(ARDUINO)/main.cpp \
-    $(ARDUINO)/HardwareSerial.cpp \
-    $(ARDUINO)/Print.cpp \
-#    $(ARDUINO)/WString.cpp \
-#    $(RFM12_LIB)/RFM12B.cpp
-
-FORMAT = ihex
-UPLOAD_RATE = 115200
+CXXSRC = rfm12b.cpp
 
 MAKEFILE = Makefile
 
-DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
@@ -46,19 +31,6 @@ CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) -ffunction-sections -fdata-sectio
 LDFLAGS = -Wl,--gc-sections
 
 
-# Programming support using avrdude. Settings and variables.
-AVRDUDE_PROGRAMMER = arduino
-AVRDUDE_PORT = $(PORT)
-AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
-  -b $(UPLOAD_RATE)
-
-#-C/usr/share/arduino/hardware/tools/avrdude.conf 
-#-patmega328p 
-#-carduino -P/dev/ttyUSB0 
-#-b115200 -D 
-#-Uflash:w:1.hex:i
-
 # Program settings
 CC = avr-gcc
 CXX = avr-g++
@@ -66,7 +38,6 @@ OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
 NM = avr-nm
-AVRDUDE = avrdude
 REMOVE = rm -f
 MV = mv -f
 
@@ -85,28 +56,15 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 # Default target.
 all: build
+	@echo $(MCU) $(( $(F_CPU) / 1000000 ))MHz
 
-build: elf hex eep
+build: elf
 
 elf: $(TARGET).elf
-hex: $(TARGET).hex
-eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-# Program the device.
-upload: $(TARGET).hex $(TARGET).eep
-	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
-	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
-
-.SUFFIXES: .elf .hex .eep .lss .sym
-
-.elf.hex:
-	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
-
-.elf.eep:
-	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-	--change-section-lma .eeprom=0 -O $(FORMAT) $< $@
+.SUFFIXES: .elf .lss .sym
 
 # Create extended listing file from ELF output file.
 .elf.lss:
@@ -124,21 +82,18 @@ $(TARGET).elf: $(OBJ)
 
 
 # Compile: create object files from C++ source files.
-%.o: $(RFM12_LIB)/%.cpp
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
-
 %.o: $(ARDUINO)/%.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 2>&1 | colorgcc
 
 %.o: %.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
+	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 2>&1 | colorgcc
 
 # Compile: create object files from C source files.
 %.o: $(ARDUINO)/%.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
+	$(CC) -c $(ALL_CFLAGS) $< -o $@ 2>&1 | colorgcc
 
 %.o: %.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
+	$(CC) -c $(ALL_CFLAGS) $< -o $@ 2>&1 | colorgcc
 
 # Compile: create assembler files from C source files.
 .cpp.s:
@@ -156,8 +111,7 @@ $(TARGET).elf: $(OBJ)
 
 # Target: clean project.
 clean:
-	$(REMOVE) $(TARGET).hex $(TARGET).eep $(TARGET).cof $(TARGET).elf \
-	$(TARGET).map $(TARGET).sym $(TARGET).lss \
+	$(REMOVE) test.elf test.map test.sym test.lss \
 	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
 
 depend:
@@ -171,4 +125,4 @@ depend:
 		>> $(MAKEFILE); \
 	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
 
-.PHONY:	all build elf hex eep lss sym program coff extcoff clean depend
+.PHONY:	all build elf lss sym program clean depend

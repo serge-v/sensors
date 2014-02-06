@@ -46,7 +46,7 @@
 #include "pins_arduino.h"
 #include <Arduino.h>
 
-#define RESET     8
+#define RESET     SS
 
 #define LED_HB    9
 #define LED_ERR   7
