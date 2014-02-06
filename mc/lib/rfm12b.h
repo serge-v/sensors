@@ -31,9 +31,11 @@ void rf12_send(uint8_t len);
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_rx_on(void);
 void rf12_rx_off(void);
+void print_buf(void);
+uint16_t rf12_read_status();
+void rf12_debug(uint8_t flag);
+
 extern uint8_t* rf12_data;
 extern volatile uint8_t receiving;
 extern volatile uint8_t rcv_done;
 extern volatile uint8_t rf12_len;
-void print_buf(void);
-uint16_t rf12_read_status();

@@ -259,6 +259,60 @@ static void respond(uint8_t len)
 
 }
 
+#define WAIT_IRQ_LO() while( IRQ_PORT & _BV(IRQ_PIN) );
+
+static void respond2(uint8_t len)
+{
+	sidx = 0;
+	rf12_len = len;
+	uint8_t i = 0;
+
+	rf12_packet[i++] = 0xAA;
+	rf12_packet[i++] = 0x2D;
+	rf12_packet[i++] = 0xD4;
+	rf12_packet[i++] = 0x0A;
+	rf12_packet[i++] = len;
+
+	uint16_t crc = ~0;
+	crc = _crc16_update(crc, group);
+
+	for (i = 0; i < len + 2; i++)
+		crc = _crc16_update(crc, rf12_rx_buf[i]);
+
+	rf12_rx_buf[i++] = crc;
+	rf12_rx_buf[i] = crc >> 8;
+
+	rf12_cmd(0x82, 0x3D); // start tx
+
+	// preamble(3) + (id, len)(2) + data len + crc(2)
+	const uint8_t send_len = 3 + 2 + len + 2;
+
+	for (i = 0; i < send_len; i++)
+	{
+		WAIT_IRQ_LO();
+		rf12_cmd(0xB8, rf12_packet[i]);
+		rf12_cmd(0x00, 0x00);
+	}
+
+	WAIT_IRQ_LO();
+	rf12_cmd(0xB8, 0x00);
+	rf12_cmd(0x00, 0x00);
+
+	rf12_cmd(0x82, 0x0D); // idle
+
+	if (cfg.debug)
+	{
+		Serial.print("sent: ");
+		for (i = 0; i < send_len; i++)
+		{
+			Serial.print(rf12_packet[i], HEX);
+			Serial.print(" ");
+		}
+		Serial.print("send_len: ");
+		Serial.println(send_len);
+	}
+}
+
 void rf12_send(uint8_t len)
 {
 	respond(len);
@@ -509,4 +563,9 @@ void rf12_rx_off()
 		detachInterrupt(0); // detach before disabling rx, otherwise it will stack in the interrupt
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	receiving = 0;
+}
+
+void rf12_debug(uint8_t flag)
+{
+	cfg.debug = flag;
 }

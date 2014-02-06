@@ -5,7 +5,8 @@ PORT1 = /dev/ttyACM0
 PORT2 = /dev/ttyACM1
 
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
+LIB = ../lib
+CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I../lib
 
 TARGET = tx4
 
@@ -19,7 +20,7 @@ CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
     $(ARDUINO)/WString.cpp \
-    RF12.cpp
+    $(LIB)/rfm12b.cpp
 
 FORMAT = ihex
 UPLOAD_RATE = 115200
@@ -79,7 +80,8 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 # Default target.
 all: build
-	@echo $(TARGET): $(MCU) $(( $(F_CPU) / 1000000 ))MHz on $(PORT)
+	@echo $(TARGET): $(MCU) $(F_CPU) Hz
+	@echo "\033[32mOK\033[0m"
 
 build: elf hex eep
 
@@ -119,56 +121,11 @@ u2: $(TARGET).hex $(TARGET).eep
 .elf.sym:
 	$(NM) -n $< > $@
 
-
-
 # Link: create ELF output file from object files.
 $(TARGET).elf: $(OBJ)
 	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
 
-
-# Compile: create object files from C++ source files.
-%.o: $(ARDUINO)/%.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 2>&1 | colorgcc
-
-%.o: %.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@ 2>&1 | colorgcc
-
-# Compile: create object files from C source files.
-%.o: $(ARDUINO)/%.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@ 2>&1 | colorgcc
-
-%.o: %.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@ 2>&1 | colorgcc
-
-# Compile: create assembler files from C source files.
-.cpp.s:
-	$(CC) -S $(ALL_CFLAGS) $< -o $@
-
-.c.s:
-	$(CC) -S $(ALL_CFLAGS) $< -o $@
-
-
-# Assemble: create object files from assembler source files.
-.S.o:
-	$(CC) -c $(ALL_ASFLAGS) $< -o $@
-
-
-
-# Target: clean project.
-clean:
-	$(REMOVE) $(TARGET).hex $(TARGET).eep $(TARGET).cof $(TARGET).elf \
-	$(TARGET).map $(TARGET).sym $(TARGET).lss \
-	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
-
-depend:
-	if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \
-	then \
-		sed -e '/^# DO NOT DELETE/,$$d' $(MAKEFILE) > \
-			$(MAKEFILE).$$$$ && \
-		$(MV) $(MAKEFILE).$$$$ $(MAKEFILE); \
-	fi
-	echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' \
-		>> $(MAKEFILE); \
-	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
+include ../lib/make/gcc.mk
+include ../lib/make/check.mk
 
 .PHONY:	all build elf hex eep lss sym program coff extcoff clean depend
