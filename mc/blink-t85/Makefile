@@ -16,7 +16,7 @@ SRC = \
     $(ARDUINO)/WInterrupts.c
 
 CXXSRC = $(TARGET).cpp \
-    debug.cpp \
+    $(LIB)/debug.cpp \
     $(LIB)/rfm12b.cpp \
     $(ARDUINO)/main.cpp \
     $(ARDUINO)/Print.cpp \
@@ -92,31 +92,13 @@ all: build
 
 build: elf hex
 
-elf: $(TARGET).elf
-hex: $(TARGET).hex
-lss: $(TARGET).lss
-sym: $(TARGET).sym
-
 # Program the device.
 upload: $(TARGET).hex
 	-kill `pgrep -f "cat $(PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 
-.SUFFIXES: .elf .hex .eep .lss .sym
 
-.elf.hex:
-	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
-
-.elf.lss:
-	$(OBJDUMP) -h -S $< > $@
-
-.elf.sym:
-	$(NM) -n $< > $@
-
-$(TARGET).elf: $(OBJ)
-	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
-
-
+include ../lib/make/elf.mk
 include ../lib/make/gcc.mk
 include ../lib/make/check.mk
 

@@ -1,15 +1,19 @@
 #include "debug.h"
 #include <Arduino.h>
 
-static uint8_t led_pin = 4;
+static uint8_t led_pin = 0xFF;
 
-void led_init()
+void led_init(int pin)
 {
+	led_pin = pin;
 	pinMode(led_pin, OUTPUT);
 }
 
 void led_dot()
 {
+	if (led_pin == 0xFF)
+		return;
+
 	digitalWrite(led_pin, HIGH);
 	delay(80);
 	digitalWrite(led_pin, LOW);
@@ -18,6 +22,9 @@ void led_dot()
 
 void led_dash()
 {
+	if (led_pin == 0xFF)
+		return;
+
 	digitalWrite(led_pin, HIGH);
 	delay(240);
 	digitalWrite(led_pin, LOW);
@@ -30,7 +37,7 @@ static void print_bin(const char*s, uint8_t c)
 	Serial.print(' ');
 
 	uint8_t r = 0x80;
-	
+
 	while (r)
 	{
 		if (c & r)
@@ -40,7 +47,7 @@ static void print_bin(const char*s, uint8_t c)
 		r >>= 1;
 	}
 	Serial.print(' ');
-	
+
 	r = c >> 4;
 	if (r > 9)
 		Serial.print((char)(r + 55));

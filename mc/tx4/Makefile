@@ -83,13 +83,7 @@ all: build
 	@echo $(TARGET): $(MCU) $(F_CPU) Hz
 	@echo "\033[32mOK\033[0m"
 
-build: elf hex eep
-
-elf: $(TARGET).elf
-hex: $(TARGET).hex
-eep: $(TARGET).eep
-lss: $(TARGET).lss
-sym: $(TARGET).sym
+build: elf hex
 
 # Program the device.
 u1: $(TARGET).hex $(TARGET).eep
@@ -104,27 +98,7 @@ u2: $(TARGET).hex $(TARGET).eep
 	sleep 5
 	echo r1111t > $(PORT2)
 
-.SUFFIXES: .elf .hex .eep .lss .sym
-
-.elf.hex:
-	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
-
-.elf.eep:
-	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-	--change-section-lma .eeprom=0 -O $(FORMAT) $< $@
-
-# Create extended listing file from ELF output file.
-.elf.lss:
-	$(OBJDUMP) -h -S $< > $@
-
-# Create a symbol table from ELF output file.
-.elf.sym:
-	$(NM) -n $< > $@
-
-# Link: create ELF output file from object files.
-$(TARGET).elf: $(OBJ)
-	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
-
+include ../lib/make/elf.mk
 include ../lib/make/gcc.mk
 include ../lib/make/check.mk
 
