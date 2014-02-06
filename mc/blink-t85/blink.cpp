@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <util/crc16.h>
 #include "debug.h"
-#include "rf12.h"
+#include <rfm12b.h>
 
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_spi_init(void);
@@ -18,7 +18,7 @@ void setup()
 	rf12_initialize(10, 212);
 	dump();
 	Serial.println("s2");
-	
+
 	rf12_rx_on();
 }
 
@@ -35,7 +35,7 @@ uint8_t verify_buf()
 {
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, 212);
-	
+
 	uint8_t i = 0;
 	for (i = 0; i < len + 2; i++)
 		crc = _crc16_update(crc, buf[i]);
@@ -83,7 +83,7 @@ void loop()
 	uint16_t cnt = 0xFFFF;
 
 	while (!rf12_read_status_MSB() && --cnt);
-	
+
 	if (cnt == 0)
 	{
 		timeouts++;

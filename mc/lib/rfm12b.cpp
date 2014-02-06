@@ -1,32 +1,6 @@
 #include <avr/io.h>
 #include <util/crc16.h>
-#include <Arduino.h> // Arduino 1.0
-
-#if defined(__AVR_ATmega328P__)
-#	define IRQ_DDR DDRD
-#	define IRQ_PORT    PIND
-#	define IRQ_PIN     PD2
-#	define SELECT_DDR  PORTB
-#	define SELECT_PORT PORTB
-#	define SELECT_PIN  PB2
-#	define LED_PIN     9
-#	define SPI_SS      10    // PB2, pin 16
-#	define SPI_MOSI    11    // PB3, pin 17
-#	define SPI_MISO    12    // PB4, pin 18
-#	define SPI_SCK     13    // PB5, pin 19
-#else
-#	define IRQ_DDR     DDRB
-#	define IRQ_PORT    PINB
-#	define IRQ_PIN     PB3
-#	define SELECT_DDR  PORTB
-#	define SELECT_PORT PORTB
-#	define SELECT_PIN  PB4
-#	define LED_PIN     0
-#	define SPI_SS      4    // PB4, pin 3
-#	define SPI_MOSI    0    // PB0, pin 5
-#	define SPI_MISO    1    // PB1, pin 6
-#	define SPI_SCK     2    // PB2, pin 7
-#endif
+#include "rfm12b.h"
 
 #define RF12_SELECT   (SELECT_PORT &= ~_BV(SELECT_PIN))
 #define RF12_UNSELECT (SELECT_PORT |= _BV(SELECT_PIN))
@@ -35,30 +9,13 @@ static uint8_t nodeid;              // address of this node
 static uint8_t group;               // network group
 
 
-uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
-void rf12_reset_fifo();
-void rf12_rx_off();
+#ifdef SPDR
 
 static uint8_t rf12_byte(uint8_t c)
 {
-#ifdef SPDR
 	SPDR = c;
 	while (!(SPSR & _BV(SPIF)));
 	return SPDR;
-#else
-	USIDR = c;
-	byte v1 = bit(USIWM0) | bit(USITC);
-	byte v2 = bit(USIWM0) | bit(USITC) | bit(USICLK);
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	USICR = v1; USICR = v2;
-	return USIDR;
-#endif
 }
 
 uint16_t rf12_read_status()
@@ -69,6 +26,56 @@ uint16_t rf12_read_status()
 	RF12_UNSELECT;
 	return c;
 }
+
+#else
+
+static void spi_run_clock ()
+{
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+}
+
+uint16_t rf12_read_status()
+{
+	RF12_SELECT;
+	USIDR = 0x00;	//Status Read Command
+	spi_run_clock();
+	uint16_t c = USIDR << 8;
+	USIDR = 0x00; 	//Status Read Command
+	spi_run_clock();
+	c |= USIDR;
+	RF12_UNSELECT;
+	return c;
+}
+
+#define MOSI_LOW     (PORTB &= ~_BV(PB1))
+#define MISO_LEVEL   (PINB & _BV(PB0))
+
+uint8_t ffit = 0;
+
+uint8_t rf12_read_status_MSB()
+{
+    RF12_SELECT;
+    MOSI_LOW;
+    asm volatile("nop");
+    return MISO_LEVEL;
+}
+
+#endif
 
 // packet format:
 // [0]            : 0xAA
@@ -87,7 +94,17 @@ volatile uint8_t rf12_len = 0;
 volatile uint8_t sidx = 0;
 volatile uint8_t receiving = 0;
 volatile uint8_t rcv_done = 0;
-uint8_t rf12_debug = 0;
+
+struct config
+{
+	uint8_t debug: 1;
+	uint8_t use_interrupts: 1;
+};
+
+static struct config cfg = {
+	.debug = 0,
+	.use_interrupts = 0
+};
 
 static void rf12_tx_interrupt()
 {
@@ -100,7 +117,7 @@ uint8_t verify_data()
 {
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
-	
+
 	int i = 0;
 	for (i = 0; i < rf12_len + 2; i++)
 		crc = _crc16_update(crc, rf12_rx_buf[i]);
@@ -108,14 +125,14 @@ uint8_t verify_data()
 	uint16_t expected_crc = rf12_rx_buf[i++];
 	expected_crc |= rf12_rx_buf[i] << 8;
 
-	if (expected_crc != crc && rf12_debug)
+	if (expected_crc != crc && cfg.debug)
 	{
 		Serial.print(" ex: ");
 		Serial.print(expected_crc, HEX);
 		Serial.print(" calc: ");
 		Serial.println(crc, HEX);
 	}
-	
+
 	return (expected_crc == crc);
 }
 
@@ -127,7 +144,7 @@ static void rf12_rx_interrupt()
 	uint16_t st = rf12_read_status();
 	if (!(st & 0x8000))
 	{
-		if (rf12_debug)
+		if (cfg.debug)
 		{
 			Serial.print("rst:");
 			Serial.println(st, HEX);
@@ -165,7 +182,7 @@ static void rf12_rx_interrupt()
 
 void print_buf()
 {
-	if (!rf12_debug && rf12_len == 0)
+	if (!cfg.debug && rf12_len == 0)
 		return;
 
 	if (verify_data())
@@ -209,7 +226,7 @@ static void respond(uint8_t len)
 
 	rf12_rx_buf[i++] = crc;
 	rf12_rx_buf[i] = crc >> 8;
-	
+
 	// preamble(3) + (id, len)(2) + data len + crc(2)
 	const uint8_t send_len = 3 + 2 + len + 2;
 	sidx = 0;
@@ -223,10 +240,10 @@ static void respond(uint8_t len)
 	while (sidx < send_len);
 
 	detachInterrupt(0);
-	
+
 	delay(100);
 
-	if (rf12_debug)
+	if (cfg.debug)
 	{
 		Serial.print("sent: ");
 		for (i = 0; i < send_len; i++)
@@ -237,7 +254,7 @@ static void respond(uint8_t len)
 		Serial.print("send_len: ");
 		Serial.println(send_len);
 	}
-	
+
 	rf12_cmd(0x82, 0x0D); // idle
 
 }
@@ -253,21 +270,24 @@ void rf12_spi_init()
 	bitSet(SELECT_DDR, SPI_SS);
 	digitalWrite(SPI_SS, 1);
 	pinMode(SPI_SS, OUTPUT);
-	pinMode(SPI_MOSI, OUTPUT);
-	pinMode(SPI_MISO, INPUT);
 	pinMode(SPI_SCK, OUTPUT);
 #ifdef SPCR
 //	SPCR = _BV(SPE) | _BV(MSTR);
 	SPCR = _BV(SPE) | _BV(MSTR);
 	// use clk/2 (2x 1/4th) for sending (and clk/8 for recv, see rf12_xferSlow)
 //	SPSR |= _BV(SPI2X);
-#else
-	USICR = bit(USIWM0);
-#endif
+	pinMode(SPI_MOSI, OUTPUT);
+	pinMode(SPI_MISO, INPUT);
 	IRQ_DDR &= ~_BV(IRQ_PIN); // IRQ input
 	IRQ_PORT |= _BV(IRQ_PIN); // IRQ pullup
+#else
+	pinMode(SPI_MOSI, INPUT);
+	pinMode(SPI_MISO, OUTPUT);
+	USICR = bit(USIWM0);
+#endif
 }
 
+#ifdef SPCR
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 {
 	bitSet(SPCR, SPR0);
@@ -280,6 +300,19 @@ uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 	bitClear(SPCR, SPR0);
 	return c;
 }
+#else
+
+uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
+{
+	RF12_SELECT;
+	USIDR = highbyte;
+	spi_run_clock();
+	USIDR = lowbyte;
+	spi_run_clock();
+	RF12_UNSELECT;
+	return USIDR;
+}
+#endif
 
 void rf12_reset_fifo()
 {
@@ -446,7 +479,8 @@ void rf12_setup()
 	rf12_cmd(RF_PLL_CFG, 0x77); // OB1,OB0, LPX,!ddy,DDIT,BW0. CC67
 	rf12_cmd(RF_WAKEUP_CFG, 0x00); // always on
 	rf12_cmd(RF_DUTY_CFG, 0x00); // no low duty mode
-	rf12_cmd(RF_BATT_CFG, 0x49); // 1.66MHz,3.1V  -- change V
+//	rf12_cmd(RF_BATT_CFG, 0x49); // 1.66MHz,3.1V  -- change V
+	rf12_cmd(RF_BATT_CFG, 0x00); // 1MHz,2.2V
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	rf12_reset_fifo();
 }
@@ -464,13 +498,15 @@ void rf12_rx_on()
 	sidx = 0;
 	rf12_len = 0;
 	rcv_done = 0;
-	attachInterrupt(0, rf12_rx_interrupt, LOW);
+	if (cfg.use_interrupts)
+		attachInterrupt(0, rf12_rx_interrupt, LOW);
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
 
 void rf12_rx_off()
 {
-	detachInterrupt(0); // detach before disabling rx, otherwise it will stack in the interrupt
+	if (cfg.use_interrupts)
+		detachInterrupt(0); // detach before disabling rx, otherwise it will stack in the interrupt
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	receiving = 0;
 }

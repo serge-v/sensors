@@ -4,7 +4,8 @@ F_CPU = 1000000
 PORT = /dev/ttyACM0
 
 ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
-CINCS = -I$(ARDUINO)
+LIB = ../lib
+CINCS = -I$(ARDUINO) -I../lib
 
 TARGET = blink
 
@@ -16,13 +17,14 @@ SRC = \
 
 CXXSRC = $(TARGET).cpp \
     debug.cpp \
-    rf12.cpp \
+    $(LIB)/rfm12b.cpp \
     $(ARDUINO)/main.cpp \
-    $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/WString.cpp \
     $(ARDUINO)/TinyDebugSerial.cpp \
     $(ARDUINO)/TinyDebugSerial9600.cpp
+
+#    $(ARDUINO)/WString.cpp \
+#    $(ARDUINO)/HardwareSerial.cpp \
 
 FORMAT = ihex
 UPLOAD_RATE = 19200
@@ -57,9 +59,9 @@ AVRDUDE_FLAGS = \
   -b $(UPLOAD_RATE)
 
 #-C/usr/share/arduino/hardware/tools/avrdude.conf
-#-pattiny85 -cstk500v1 -P/dev/ttyACM0 -b19200 -Uflash:w:1.hex:i 
+#-pattiny85 -cstk500v1 -P/dev/ttyACM0 -b19200 -Uflash:w:1.hex:i
 
-  
+
 # Program settings
 CC = avr-gcc
 CXX = avr-g++
@@ -115,50 +117,7 @@ $(TARGET).elf: $(OBJ)
 	$(CC) $(ALL_CFLAGS) $(OBJ) --output $@ $(LDFLAGS)
 
 
-# Compile: create object files from C++ source files.
-%.o: $(ARDUINO)/%.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
-
-%.o: %.cpp
-	$(CXX) -c $(ALL_CXXFLAGS) $< -o $@
-
-# Compile: create object files from C source files.
-%.o: $(ARDUINO)/%.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
-
-%.o: %.c
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
-
-# Compile: create assembler files from C source files.
-.cpp.s:
-	$(CC) -S $(ALL_CFLAGS) $< -o $@
-
-.c.s:
-	$(CC) -S $(ALL_CFLAGS) $< -o $@
-
-
-# Assemble: create object files from assembler source files.
-.S.o:
-	$(CC) -c $(ALL_ASFLAGS) $< -o $@
-
-
-
-# Target: clean project.
-clean:
-	$(REMOVE) $(TARGET).hex $(TARGET).eep $(TARGET).cof $(TARGET).elf \
-	$(TARGET).map $(TARGET).sym $(TARGET).lss \
-	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d) \
-	last_build~.conf this_build~.conf
-
-depend:
-	if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \
-	then \
-		sed -e '/^# DO NOT DELETE/,$$d' $(MAKEFILE) > \
-			$(MAKEFILE).$$$$ && \
-		$(MV) $(MAKEFILE).$$$$ $(MAKEFILE); \
-	fi
-	echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' \
-		>> $(MAKEFILE); \
-	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
+include ../lib/make/gcc.mk
+include ../lib/make/check.mk
 
 .PHONY:	all build elf hex eep lss sym program coff extcoff clean depend
