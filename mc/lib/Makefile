@@ -1,14 +1,8 @@
-MCU = atmega328p
+MCU = attiny85
 F_CPU = 16000000
 
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
-
-TARGET = libtest
-
-SRC =
-
-CXXSRC = rfm12b.cpp $(ARDUINO)/main.cpp
 
 MAKEFILE = Makefile
 
@@ -40,30 +34,24 @@ NM = avr-nm
 REMOVE = rm -f
 MV = mv -f
 
-# Define all object files.
-OBJ = $(notdir $(SRC:.c=.o) $(CXXSRC:.cpp=.o) $(ASRC:.S=.o))
-
-# Define all listing files.
-LST = $(ASRC:.S=.lst) $(CXXSRC:.cpp=.lst) $(SRC:.c=.lst)
-
-# Combine all necessary flags and optional flags.
-# Add target processor to flags.
 ALL_CFLAGS = -mmcu=$(MCU) -I. $(CFLAGS)
 ALL_CXXFLAGS = -mmcu=$(MCU) -I. $(CXXFLAGS)
 ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: build
-	@echo $(MCU) $(( $(F_CPU) / 1000000 ))MHz
+all: uart_test.hex rfm12b_calc
 
-build: elf
+uart_test.elf: uart_test.o basic_serial.o
+	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
 
-defs:
-	gcc libtest.cpp && ./a.out
+.SUFFIXES: .elf .hex .eep .lss .sym
 
-include ../lib/make/elf.mk
+.elf.hex:
+	$(OBJCOPY) -O ihex -R .eeprom $< $@
+
+rfm12b_calc:
+	gcc rfm12b_calc.c -o rfm12b_calc
+
 include ../lib/make/gcc.mk
 include ../lib/make/check.mk
-
-.PHONY:	all build elf lss sym program clean depend
