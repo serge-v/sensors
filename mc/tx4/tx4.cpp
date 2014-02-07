@@ -1,21 +1,11 @@
 #include <Arduino.h>
+#include <rfm12b.h>
 
 #define myNodeID 10          //node ID of tx (range 0-30)
 #define network     212      //network group (can be in the range 1-250).
 
 const uint8_t led_pin1 = 7;
 const uint8_t led_pin2 = 9;
-
-void rf12_initialize(uint8_t id, uint8_t g);
-void rf12_send(uint8_t len);
-void rf12_rx_on(void);
-void rf12_rx_off(void);
-extern char* rf12_data;
-extern uint8_t receiving;
-extern uint8_t rcv_done;
-extern uint8_t rf12_debug;
-extern uint8_t rf12_len;
-void print_buf(void);
 
 static void dot()
 {
@@ -64,7 +54,6 @@ static void handle_serial()
 	switch (c)
 	{
 	case 'i': // init
-		rf12_debug = 0;
 		interval = 10000;
 		sts.rx_enabled = 0;
 		sts.tx_enabled = 0;
@@ -73,10 +62,10 @@ static void handle_serial()
 		Serial.println("init");
 		break;
 	case 'g':
-		rf12_debug = !rf12_debug;
-		sts.debug = rf12_debug; 
+		sts.debug = !sts.debug;
+		rf12_debug(sts.debug);
 		Serial.print("debug: ");
-		Serial.println(rf12_debug);
+		Serial.println(sts.debug);
 		break;
 	case '1':
 		interval -= 1000;
@@ -112,9 +101,9 @@ void loop()
 			rf12_rx_off();
 
 		unsigned long time = millis();
-		uint8_t n = snprintf(rf12_data, 20, "%d,t,%lu\n", led_pin1, time);
+		uint8_t n = snprintf((char*)rf12_data, 20, "%d,t,%lu\n", led_pin1, time);
 		rf12_data[n] = 0; // rf12_send will override it with crc
-		Serial.print(rf12_data);
+		Serial.print((char*)rf12_data);
 		rf12_send(n);
 		last_send = millis();
 		dot();
@@ -124,14 +113,14 @@ void loop()
 			rf12_rx_on();
 	}
 
-	
+
 	if (sts.rx_enabled && rcv_done)
 	{
 		print_buf();
 		dot();
 		rf12_rx_on();
 	}
-	
+
 	if (sts.auto_start && !sts.rx_enabled && millis() - last_send > 30000)
 	{
 		sts.rx_enabled = 1;
