@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 
 #if defined(__AVR_ATmega328P__)
 #	define IRQ_DDR DDRD
@@ -32,9 +32,9 @@ uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_rx_on(void);
 void rf12_rx_off(void);
 void print_buf(void);
-uint16_t rf12_read_status();
+uint16_t rf12_read_status(void);
 void rf12_debug(uint8_t flag);
-void rf12_reset_fifo();
+void rf12_reset_fifo(void);
 
 extern uint8_t* rf12_data;
 extern volatile uint8_t receiving;

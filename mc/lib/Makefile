@@ -40,9 +40,12 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: uart_test.hex rfm12b_calc
+all: uart_test.hex rfm12b_test.hex rfm12b_calc
 
 uart_test.elf: uart_test.o basic_serial.o
+	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
+
+rfm12b_test.elf: rfm12b.c rfm12b_test.c
 	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
 
 .SUFFIXES: .elf .hex .eep .lss .sym
