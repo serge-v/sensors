@@ -34,6 +34,7 @@ void rf12_rx_off(void);
 void print_buf(void);
 uint16_t rf12_read_status();
 void rf12_debug(uint8_t flag);
+void rf12_reset_fifo();
 
 extern uint8_t* rf12_data;
 extern volatile uint8_t receiving;
