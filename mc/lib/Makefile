@@ -1,5 +1,8 @@
 MCU = attiny85
-F_CPU = 16000000
+F_CPU = 1000000
+
+PORT = /dev/ttyACM0
+UPLOAD_RATE = 19200
 
 ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
@@ -42,8 +45,11 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 # Default target.
 all: uart_test.hex rfm12b_test.hex rfm12b_calc
 
-uart_test.elf: uart_test.o basic_serial.o
-	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
+uart_test.elf: uart_test.o dbg_uart.o basic_serial.o
+	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS) -lc
+
+depend: uart_test.c dbg_uart.c basic_serial.S
+	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $< $(ASRC) >> uart_test.dep
 
 rfm12b_test.elf: rfm12b.c rfm12b_test.c
 	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
@@ -54,7 +60,15 @@ rfm12b_test.elf: rfm12b.c rfm12b_test.c
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
 rfm12b_calc:
-	gcc rfm12b_calc.c -o rfm12b_calc
+	gcc rfm12b_calc.c -o rfm12b_calc.exe
+
+include ../lib/make/burn.mk
+
+upload: uart_test.hex
+	-kill `pgrep -f "cat $(PORT)"`
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:$<
+
 
 include ../lib/make/gcc.mk
 include ../lib/make/check.mk
+include uart_test.dep

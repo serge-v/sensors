@@ -1,75 +1,20 @@
 #include <avr/io.h>
+#include <util/delay.h>
 #include <stdio.h>
 
-#ifndef BAUD
-#define BAUD 9600
-#endif
-#include <util/setbaud.h>
-
-#include "basic_serial.h"
-
-/*
-void uart_init(void) {
-	UBRR0H = UBRRH_VALUE;
-	UBRR0L = UBRRL_VALUE;
-
-#if USE_2X
-	UCSR0A |= _BV(U2X0);
-#else
-	UCSR0A &= ~(_BV(U2X0));
-#endif
-
-	UCSR0C = _BV(UCSZ01) | _BV(UCSZ00); //  8-bit data
-	UCSR0B = _BV(RXEN0) | _BV(TXEN0);   // Enable RX and TX
-}
-
-void uart_putchar(char c, FILE *stream) {
-	if (c == '\n') {
-		uart_putchar('\r', stream);
-	}
-	loop_until_bit_is_set(UCSR0A, UDRE0);
-	UDR0 = c;
-}
-
-char uart_getchar(FILE *stream) {
-	loop_until_bit_is_set(UCSR0A, RXC0);
-	return UDR0;
-}
-
-FILE uart_output = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
-FILE uart_input = FDEV_SETUP_STREAM(NULL, uart_getchar, _FDEV_SETUP_READ);
-
-*/
-
-void serOut(const char* str)
-{
-	while (*str) TxByte (*str++);
-}
-
-void loop(){
-	uint8_t c;
-	serOut("Serial echo test\n\r");
-	while ( c = RxByte() ){
-		TxByte(c);
-	}
-}
+int tick = 0;
 
 int main(void)
 {
-/*	uart_init();
-	stdout = &uart_output;
-	stdin  = &uart_input;
+	dbg_uart_init();
 
-	char input;
+	printf("started\n");
 
-	while(1) {
-		puts("Hello world!");
-		input = getchar();
-		printf("You wrote %c\n", input);
+	while (1)
+	{
+		printf("tick: %d\n", tick++);
+		_delay_ms(1000);
 	}
-*/
-
-	loop();
 
 	return 0;
 }

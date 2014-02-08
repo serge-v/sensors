@@ -4,7 +4,7 @@
  * @version: $Id$
  */
 
-#define BAUD_RATE 115200
+#define BAUD_RATE 19200
 
 #ifdef F_CPU
   /* account for integer truncation by adding 3/2 = 1.5 */
