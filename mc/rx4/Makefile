@@ -48,7 +48,6 @@ LDFLAGS = -Wl,--gc-sections
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PROGRAMMER = arduino
 AVRDUDE_PORT = $(PORT)
-AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
   -b $(UPLOAD_RATE)
 

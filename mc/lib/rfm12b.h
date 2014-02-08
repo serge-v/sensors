@@ -1,4 +1,9 @@
-//#include <Arduino.h>
+#include <Arduino.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #if defined(__AVR_ATmega328P__)
 #	define IRQ_DDR DDRD
@@ -35,8 +40,13 @@ void print_buf(void);
 uint16_t rf12_read_status(void);
 void rf12_debug(uint8_t flag);
 void rf12_reset_fifo(void);
+uint8_t rf12_read_status_MSB(void);
 
 extern uint8_t* rf12_data;
 extern volatile uint8_t receiving;
 extern volatile uint8_t rcv_done;
 extern volatile uint8_t rf12_len;
+
+#ifdef __cplusplus
+}
+#endif

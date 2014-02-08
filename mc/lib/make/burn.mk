@@ -4,4 +4,3 @@ AVRDUDE_PORT = $(PORT)
 AVRDUDE_FLAGS = -q -q \
   -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
   -b $(UPLOAD_RATE)
-

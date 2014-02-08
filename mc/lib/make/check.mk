@@ -8,4 +8,6 @@ clean:
 	$(TARGET).map $(TARGET).sym $(TARGET).lss \
 	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d) \
 	last_build~.conf this_build~.conf
+	ls -l --color=always
+
 

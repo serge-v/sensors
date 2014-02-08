@@ -1,7 +1,7 @@
-#include <Arduino.h>
 #include <util/crc16.h>
 #include "debug.h"
 #include <rfm12b.h>
+#include <dbg_uart.h>
 
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_spi_init(void);
@@ -14,11 +14,12 @@ unsigned long last_send = 0;
 
 void setup()
 {
-	Serial.begin(9600);
+	dbg_uart_init();
+	printf("  b");
 	rf12_initialize(10, 212);
+	printf("l");
 	rf12_rx_on();
-	last_send = last_dump = millis();
-	Serial.println("blink-t85. rx on.");
+	printf("ink. rx on\n");
 }
 
 uint8_t buf[20];
@@ -47,25 +48,18 @@ void reset_buf()
 	if (verify_buf())
 	{
 		buf[len+2] = 0;
-		Serial.print("  ");
-		Serial.print((char*)(buf+2));
+		printf("  %s", (char*)(buf+2));
 	}
 	else
 	{
 		if (idx > 0)
 		{
-			Serial.print("  ");
+			printf("  ");
 			for (int i = 0; i < idx; i++)
-			{
-				Serial.print(buf[i], HEX);
-				Serial.print(" ");
-			}
-			Serial.println();
+				printf("%02X ", buf[i]);
+			printf("\n");
 		}
-		Serial.print("  n: ");
-		Serial.print(len, DEC);
-		Serial.print(" t: ");
-		Serial.println(timeouts, DEC);
+		printf("  n: %d, t: %u\n", len, timeouts);
 	}
 
 	idx = 0;
@@ -110,11 +104,7 @@ static void send_status()
 	tx(0);           // dummy byte
 	while (!rf12_read_status_MSB()); // wait dummy byte
 	rf12_cmd(0x82, 0x0D); // idle
-	Serial.print((char*)sbuf);
-	Serial.print(" ");
-	Serial.print(crc & 0xFF, HEX);
-	Serial.print(" ");
-	Serial.println(crc >> 8, HEX);
+	printf("%s %02X %02X\n", (char*)sbuf, crc & 0xFF, crc >> 8);
 	rf12_rx_on();
 }
 
@@ -153,4 +143,8 @@ void loop()
 		reset_buf();
 }
 
-
+int main()
+{
+	setup();
+	loop();
+}

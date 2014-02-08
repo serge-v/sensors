@@ -10,21 +10,18 @@ CINCS = -I$(ARDUINO) -I../lib
 TARGET = blink
 
 SRC = \
+    $(TARGET).c \
     $(ARDUINO)/pins_arduino.c \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/WInterrupts.c
+    $(ARDUINO)/WInterrupts.c \
+    $(LIB)/dbg_uart.c \
+    $(LIB)/rfm12b.c
 
-CXXSRC = $(TARGET).cpp \
-    $(LIB)/debug.cpp \
-    $(LIB)/rfm12b.cpp \
-    $(ARDUINO)/main.cpp \
-    $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/TinyDebugSerial.cpp \
-    $(ARDUINO)/TinyDebugSerial9600.cpp
+ASRC = \
+    $(LIB)/basic_serial.S
 
-#    $(ARDUINO)/WString.cpp \
-#    $(ARDUINO)/HardwareSerial.cpp \
+CXXSRC = 
 
 FORMAT = ihex
 UPLOAD_RATE = 19200
@@ -71,6 +68,12 @@ all: build
 	@echo "\033[32mOK\033[0m"
 
 build: elf hex
+
+upload: $(TARGET).hex $(TARGET).eep
+	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -U flash:w:$(TARGET).hex
+	sleep 1
+	echo 1 > $(AVRDUDE_PORT)
 
 include ../lib/make/elf.mk
 include ../lib/make/gcc.mk

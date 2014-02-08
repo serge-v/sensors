@@ -1,4 +1,4 @@
-//#include <Arduino.h>
+#include <Arduino.h>
 #include <avr/io.h>
 #include <util/crc16.h>
 #include "rfm12b.h"
@@ -68,7 +68,7 @@ uint16_t rf12_read_status()
 
 uint8_t ffit = 0;
 
-uint8_t rf12_read_status_MSB(void)
+uint8_t rf12_read_status_MSB()
 {
     RF12_SELECT;
     MOSI_LOW;

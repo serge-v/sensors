@@ -12,6 +12,9 @@
 %.o: $(ARDUINO)/%.c
 	$(CC) -c $(ALL_CFLAGS) $< -o $@
 
+%.o: $(LIB)/%.c
+	$(CC) -c $(ALL_CFLAGS) $< -o $@
+
 %.o: %.c
 	$(CC) -c $(ALL_CFLAGS) $< -o $@
 
@@ -24,5 +27,8 @@
 
 
 # Assemble: create object files from assembler source files.
+%.o: $(LIB)/%.S
+	$(CC) -c $(ALL_ASFLAGS) $< -o $@
+
 .S.o:
 	$(CC) -c $(ALL_ASFLAGS) $< -o $@
