@@ -1,7 +1,7 @@
 MCU = attiny85
 F_CPU = 1000000
 
-PORT = /dev/ttyACM0
+PORT = /dev/ttyACM1
 
 ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
 LIB = ../lib
@@ -21,7 +21,7 @@ SRC = \
 ASRC = \
     $(LIB)/basic_serial.S
 
-CXXSRC = 
+CXXSRC =
 
 FORMAT = ihex
 UPLOAD_RATE = 19200

@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <rfm12b.h>
+#include <stdio.h>
+#include "serial.h"
 
 #define myNodeID 10          //node ID of tx (range 0-30)
 #define network     212      //network group (can be in the range 1-250).
@@ -7,7 +9,7 @@
 const uint8_t led_pin1 = 7;
 const uint8_t led_pin2 = 9;
 
-static void dot()
+static void dot(void)
 {
 	digitalWrite(led_pin1, HIGH);
 	digitalWrite(led_pin2, HIGH);
@@ -17,14 +19,21 @@ static void dot()
 	delay(100);
 }
 
-void setup()
+FILE serial_stream = FDEV_SETUP_STREAM(serial_putchar, serial_getchar, _FDEV_SETUP_RW);
+
+
+void setup(void)
 {
+	serial_init();
+	stdout = stdin = &serial_stream;
+
+	printf("t");
 	pinMode(led_pin1, OUTPUT);
 	pinMode(led_pin2, OUTPUT);
 	rf12_initialize(myNodeID, network);
-	Serial.begin(115200);
-	Serial.println("tx4 started");
+	printf("x");
 	rf12_rx_on();
+	printf("4 started\n");
 }
 
 unsigned long last_send = 0;
@@ -46,11 +55,11 @@ struct settings sts = {
 	.debug = 0
 };
 
-static void handle_serial()
+static void handle_serial(void)
 {
 	sts.auto_start = 0;
 
-	byte c = Serial.read();
+	byte c = getchar();
 	switch (c)
 	{
 	case 'i': // init
@@ -59,40 +68,35 @@ static void handle_serial()
 		sts.tx_enabled = 0;
 		sts.auto_start = 1;
 		last_send = millis();
-		Serial.println("init");
+		printf("init\n");
 		break;
 	case 'g':
 		sts.debug = !sts.debug;
 		rf12_debug(sts.debug);
-		Serial.print("debug: ");
-		Serial.println(sts.debug);
+		printf("debug: %d\n", sts.debug);
 		break;
 	case '1':
 		interval -= 1000;
-		Serial.print("interval: ");
-		Serial.println(interval);
+		printf("interval: %lu\n", interval);
 		break;
 	case '2':
 		interval += 1000;
-		Serial.print("interval: ");
-		Serial.println(interval);
+		printf("interval: %lu\n", interval);
 		break;
 	case 't':
 		sts.tx_enabled = !sts.tx_enabled;
-		Serial.print("tx: ");
-		Serial.println(sts.tx_enabled);
+		printf("tx: %d\n", sts.tx_enabled);
 		break;
 	case 'r':
 		sts.rx_enabled = !sts.rx_enabled;
-		Serial.print("rx: ");
-		Serial.println(sts.rx_enabled);
+		printf("rx: %d\n", sts.rx_enabled);
 		break;
 	}
 }
 
-void loop()
+void loop(void)
 {
-	if (Serial.available())
+	if (serial_available())
 		handle_serial();
 
 	if (sts.tx_enabled && !receiving && millis() - last_send > interval)
@@ -103,7 +107,7 @@ void loop()
 		unsigned long time = millis();
 		uint8_t n = snprintf((char*)rf12_data, 20, "%d,t,%lu\n", led_pin1, time);
 		rf12_data[n] = 0; // rf12_send will override it with crc
-		Serial.print((char*)rf12_data);
+		printf("%s", (char*)rf12_data);
 		rf12_send(n);
 		last_send = millis();
 		dot();
@@ -124,12 +128,12 @@ void loop()
 	if (sts.auto_start && !sts.rx_enabled && millis() - last_send > 30000)
 	{
 		sts.rx_enabled = 1;
-		Serial.println("rx auto enabled");
+		printf("rx auto enabled\n");
 	}
 	else if (sts.auto_start && !sts.tx_enabled && millis() - last_send > 35000)
 	{
 		sts.auto_start = 0;
 		sts.tx_enabled = 1;
-		Serial.println("tx auto enabled");
+		printf("tx auto enabled\n");
 	}
 }

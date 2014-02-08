@@ -10,17 +10,17 @@ CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I../lib
 
 TARGET = tx4
 
-SRC = \
+SRC = tx4.c \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/WInterrupts.c
+    $(ARDUINO)/WInterrupts.c \
+    $(LIB)/rfm12b.c
 
-CXXSRC = $(TARGET).cpp \
+CXXSRC = serial.cpp \
     $(ARDUINO)/main.cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/WString.cpp \
-    $(LIB)/rfm12b.cpp
+    $(ARDUINO)/WString.cpp
 
 FORMAT = ihex
 UPLOAD_RATE = 115200

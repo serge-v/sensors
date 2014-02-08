@@ -1,8 +1,6 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <avr/io.h>
 #include <util/crc16.h>
-#include <util/delay.h>
-#include <stdio.h>
 #include "rfm12b.h"
 
 #define RF12_SELECT   (SELECT_PORT &= ~_BV(SELECT_PIN))
@@ -32,7 +30,7 @@ uint16_t rf12_read_status()
 
 #else
 
-static void spi_run_clock(void)
+static void spi_run_clock ()
 {
 	USICR = _BV(USIWM0) | _BV(USITC);
 	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
@@ -109,14 +107,14 @@ static struct config cfg = {
 	.use_interrupts = 0
 };
 
-static void rf12_tx_interrupt(void)
+static void rf12_tx_interrupt()
 {
 	rf12_cmd(0x00, 0x00);
 	rf12_cmd(0xB8, rf12_packet[sidx]);
 	sidx++;
 }
 
-uint8_t verify_data(void)
+uint8_t verify_data()
 {
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
@@ -129,12 +127,17 @@ uint8_t verify_data(void)
 	expected_crc |= rf12_rx_buf[i] << 8;
 
 	if (expected_crc != crc && cfg.debug)
-		printf(" ex: %4X, calc: %4X\n", expected_crc, crc);
+	{
+		Serial.print(" ex: ");
+		Serial.print(expected_crc, HEX);
+		Serial.print(" calc: ");
+		Serial.println(crc, HEX);
+	}
 
 	return (expected_crc == crc);
 }
 
-static void rf12_rx_interrupt(void)
+static void rf12_rx_interrupt()
 {
 	if (rcv_done)
 		return;
@@ -143,7 +146,10 @@ static void rf12_rx_interrupt(void)
 	if (!(st & 0x8000))
 	{
 		if (cfg.debug)
-			printf("rst: %04X\n", st);
+		{
+			Serial.print("rst:");
+			Serial.println(st, HEX);
+		}
 		return;
 	}
 
@@ -182,14 +188,21 @@ void print_buf()
 
 	if (verify_data())
 	{
+		Serial.print("    len: ");
+		Serial.print(rf12_len);
+		Serial.print(" data: ");
 		rf12_data[rf12_len] = 0;
-		printf("    len: %d, data: %s", rf12_len, (char*)rf12_data);
+		Serial.print((char*)rf12_data);
 	}
 	else
 	{
 		for (int i = 0; i < rf12_len+4; i++)
-			printf("%02X ", rf12_rx_buf[i]);
-		printf(" len: %02X\n", rf12_len);
+		{
+			Serial.print(rf12_rx_buf[i], HEX);
+			Serial.print(' ');
+		}
+		Serial.print(" len: ");
+		Serial.println(rf12_len);
 	}
 }
 
@@ -229,18 +242,18 @@ static void respond(uint8_t len)
 
 	detachInterrupt(0);
 
-	_delay_ms(100);
+	delay(100);
 
 	if (cfg.debug)
 	{
-//		Serial.print("sent: ");
+		Serial.print("sent: ");
 		for (i = 0; i < send_len; i++)
 		{
-//			Serial.print(rf12_packet[i], HEX);
-//			Serial.print(" ");
+			Serial.print(rf12_packet[i], HEX);
+			Serial.print(" ");
 		}
-//		Serial.print("send_len: ");
-//		Serial.println(send_len);
+		Serial.print("send_len: ");
+		Serial.println(send_len);
 	}
 
 	rf12_cmd(0x82, 0x0D); // idle
@@ -290,14 +303,14 @@ static void respond2(uint8_t len)
 
 	if (cfg.debug)
 	{
-//		Serial.print("sent: ");
+		Serial.print("sent: ");
 		for (i = 0; i < send_len; i++)
 		{
-//			Serial.print(rf12_packet[i], HEX);
-//			Serial.print(" ");
+			Serial.print(rf12_packet[i], HEX);
+			Serial.print(" ");
 		}
-//		Serial.print("send_len: ");
-//		Serial.println(send_len);
+		Serial.print("send_len: ");
+		Serial.println(send_len);
 	}
 }
 
@@ -306,7 +319,7 @@ void rf12_send(uint8_t len)
 	respond(len);
 }
 
-void rf12_spi_init(void)
+void rf12_spi_init()
 {
 	bitSet(SELECT_PORT, SPI_SS);
 	bitSet(SELECT_DDR, SPI_SS);
@@ -365,20 +378,19 @@ void rf12_reset_fifo()
 
 #include "rfm12b_defs.h"
 
-void rf12_setup(void)
+void rf12_setup()
 {
 	rf12_spi_init();
 
 	rf12_cmd(0, 0);
-
-	_delay_ms(200);
+	delay(200);
 	rf12_cmd(0, 0);
 
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EB | RF_PWR_DC);
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);
 	rf12_cmd(RF_FREQ_CFG, 0x40); // 433.26MHz
-	rf12_cmd(RF_DRATE_CFG, 0x06); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
-//	rf12_cmd(RF_DRATE_CFG, 0x11); // 19200
+//	rf12_cmd(RF_DRATE_CFG, 0x06); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
+	rf12_cmd(RF_DRATE_CFG, 0x11); // 19200
 	rf12_cmd(RF_RX_CTRL|RF_RX_VDI_OUT, RF_RX_RESP_FAST | RF_RX_BW_134 | RF_RX_GAIN_0 | RF_RX_RSSI_M91);
 	rf12_cmd(RF_DF, RF_DF_AL | RF_DF_SBITS | RF_DF_DQD4);
 	rf12_cmd(RF_FIFO, 0x81); // FIFO8,2-SYNC,!ff,DR

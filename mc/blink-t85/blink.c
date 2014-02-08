@@ -1,7 +1,34 @@
+#include <stdio.h>
 #include <util/crc16.h>
-#include "debug.h"
+#include <util/delay.h>
+#include <debug.h>
 #include <rfm12b.h>
 #include <dbg_uart.h>
+
+// ======== timer ==================
+unsigned long int _millis = 0;
+
+// timer overflow occur every 0.256 ms
+ISR(TIM0_OVF_vect)
+{
+	_millis++;
+}
+
+unsigned long int tick_ms()
+{
+	uint64_t m;
+	cli();
+	m = _millis;
+	sei();
+	return m;
+}
+
+void setup_timer(void)
+{
+	TCCR0B = (1<<CS02) | (1<<CS00); // F_CPU/1024 
+	TIMSK = 1 << TOIE0; // enable timer overflow interrupt
+	sei();
+}
 
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_spi_init(void);
@@ -12,14 +39,16 @@ volatile int c = 0;
 unsigned long last_dump = 0;
 unsigned long last_send = 0;
 
-void setup()
+void setup(void)
 {
 	dbg_uart_init();
-	printf("  b");
+	printf("\n\n\n\nb");
 	rf12_initialize(10, 212);
 	printf("l");
 	rf12_rx_on();
-	printf("ink. rx on\n");
+	printf("i");
+	setup_timer();
+	printf("nk %s %s\n", __DATE__, __TIME__);
 }
 
 uint8_t buf[20];
@@ -28,7 +57,7 @@ uint8_t idx = 0;
 uint8_t len = 0;
 unsigned int timeouts = 0;
 
-uint8_t verify_buf()
+uint8_t verify_buf(void)
 {
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, 212);
@@ -43,29 +72,29 @@ uint8_t verify_buf()
 	return (expected_crc == crc);
 }
 
-void reset_buf()
+void reset_buf(void)
 {
 	if (verify_buf())
 	{
 		buf[len+2] = 0;
-		printf("  %s", (char*)(buf+2));
+		printf("    %lu: %s", tick_ms(), (char*)(buf+2));
 	}
 	else
 	{
 		if (idx > 0)
 		{
-			printf("  ");
+			printf("    ");
 			for (int i = 0; i < idx; i++)
 				printf("%02X ", buf[i]);
 			printf("\n");
 		}
-		printf("  n: %d, t: %u\n", len, timeouts);
+		printf("    n: %d, t: %u\n", len, timeouts);
 	}
 
 	idx = 0;
 	len = 0;
 	rf12_rx_on();
-	last_dump = millis();
+	last_dump = tick_ms();
 }
 
 static void tx(uint8_t c)
@@ -74,11 +103,12 @@ static void tx(uint8_t c)
 	rf12_cmd(0xB8, c);
 }
 
-static void send_status()
+static void send_status(void)
 {
 	rf12_rx_off();
+	printf("rx off\n");
 
-	int n = sprintf((char*)sbuf, "s,%lu\n", millis()); 
+	int n = sprintf((char*)sbuf, "s,%lu\n", tick_ms()); 
 	
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, 212);
@@ -86,7 +116,8 @@ static void send_status()
 	crc = _crc16_update(crc, n);
 	for (uint8_t i = 0; i < n; i++)
 		crc = _crc16_update(crc, sbuf[i]);
-	
+
+	printf("sending %s", sbuf);
 	rf12_reset_fifo();
 
 	rf12_cmd(0x82, 0x3D); // start tx
@@ -102,13 +133,15 @@ static void send_status()
 	tx(crc & 0xFF);  // crc lo
 	tx(crc >> 8);    // crc hi
 	tx(0);           // dummy byte
+	tx(0);           // dummy byte
 	while (!rf12_read_status_MSB()); // wait dummy byte
 	rf12_cmd(0x82, 0x0D); // idle
 	printf("%s %02X %02X\n", (char*)sbuf, crc & 0xFF, crc >> 8);
 	rf12_rx_on();
+	printf("rx on\n");
 }
 
-void loop()
+void loop(void)
 {
 	uint16_t cnt = 0xFFFF;
 
@@ -117,13 +150,13 @@ void loop()
 	if (cnt == 0)
 	{
 		timeouts++;
-		if (millis() - last_dump > 5000)
+		if (tick_ms() - last_dump > 5000)
 			reset_buf();
 
-		if (millis() - last_send > 20000)
+		if (tick_ms() - last_send > 20000)
 		{
 			send_status();
-			last_send = millis();
+			last_send = tick_ms();
 		}
 		return;
 	}
@@ -143,8 +176,9 @@ void loop()
 		reset_buf();
 }
 
-int main()
+int main(void)
 {
 	setup();
-	loop();
+	while (1)
+		loop();
 }
