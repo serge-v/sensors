@@ -27,13 +27,12 @@ void setup(void)
 	serial_init();
 	stdout = stdin = &serial_stream;
 
-	printf("t");
 	pinMode(led_pin1, OUTPUT);
 	pinMode(led_pin2, OUTPUT);
 	rf12_initialize(myNodeID, network);
-	printf("x");
+	rf12_use_interrupts(1);
 	rf12_rx_on();
-	printf("4 started\n");
+	printf("tx4 %s %s\n", __DATE__, __TIME__);
 }
 
 unsigned long last_send = 0;

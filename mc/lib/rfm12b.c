@@ -189,7 +189,7 @@ void print_buf()
 	{
 		for (int i = 0; i < rf12_len+4; i++)
 			printf("%02X ", rf12_rx_buf[i]);
-		printf(" len: %02X\n", rf12_len);
+		printf(" len: %d\n", rf12_len);
 	}
 }
 
@@ -233,14 +233,12 @@ static void respond(uint8_t len)
 
 	if (cfg.debug)
 	{
-//		Serial.print("sent: ");
+		printf("sent: ");
 		for (i = 0; i < send_len; i++)
 		{
-//			Serial.print(rf12_packet[i], HEX);
-//			Serial.print(" ");
+			printf("%02X ", rf12_packet[i]);
 		}
-//		Serial.print("send_len: ");
-//		Serial.println(send_len);
+		printf("send_len: %d\n", send_len);
 	}
 
 	rf12_cmd(0x82, 0x0D); // idle
@@ -290,20 +288,21 @@ static void respond2(uint8_t len)
 
 	if (cfg.debug)
 	{
-//		Serial.print("sent: ");
+		printf("sent: ");
 		for (i = 0; i < send_len; i++)
 		{
-//			Serial.print(rf12_packet[i], HEX);
-//			Serial.print(" ");
+			printf("%02X ", rf12_packet[i]);
 		}
-//		Serial.print("send_len: ");
-//		Serial.println(send_len);
+		printf("send_len: %d\n", send_len);
 	}
 }
 
 void rf12_send(uint8_t len)
 {
-	respond(len);
+	if (cfg.use_interrupts)
+		respond(len);
+	else
+		respond2(len);
 }
 
 void rf12_spi_init(void)
@@ -378,7 +377,7 @@ void rf12_setup(void)
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);
 	rf12_cmd(RF_FREQ_CFG, 0x40); // 433.26MHz
 	rf12_cmd(RF_DRATE_CFG, 0x06); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
-//	rf12_cmd(RF_DRATE_CFG, 0x11); // 19200
+	rf12_cmd(RF_DRATE_CFG, 0x11); // 19200
 	rf12_cmd(RF_RX_CTRL|RF_RX_VDI_OUT, RF_RX_RESP_FAST | RF_RX_BW_134 | RF_RX_GAIN_0 | RF_RX_RSSI_M91);
 	rf12_cmd(RF_DF, RF_DF_AL | RF_DF_SBITS | RF_DF_DQD4);
 	rf12_cmd(RF_FIFO, 0x81); // FIFO8,2-SYNC,!ff,DR
@@ -388,8 +387,8 @@ void rf12_setup(void)
 	rf12_cmd(RF_PLL_CFG, 0x77); // OB1,OB0, LPX,!ddy,DDIT,BW0. CC67
 	rf12_cmd(RF_WAKEUP_CFG, 0x00); // always on
 	rf12_cmd(RF_DUTY_CFG, 0x00); // no low duty mode
-//	rf12_cmd(RF_BATT_CFG, 0x49); // 1.66MHz,3.1V  -- change V
-	rf12_cmd(RF_BATT_CFG, 0x00); // 1MHz,2.2V
+	rf12_cmd(RF_BATT_CFG, 0x49); // 1.66MHz,3.1V  -- change V
+//	rf12_cmd(RF_BATT_CFG, 0x00); // 1MHz,2.2V
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	rf12_reset_fifo();
 }
@@ -423,4 +422,9 @@ void rf12_rx_off()
 void rf12_debug(uint8_t flag)
 {
 	cfg.debug = flag;
+}
+
+void rf12_use_interrupts(uint8_t flag)
+{
+	cfg.use_interrupts = flag;
 }

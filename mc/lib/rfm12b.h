@@ -39,6 +39,7 @@ void rf12_rx_off(void);
 void print_buf(void);
 uint16_t rf12_read_status(void);
 void rf12_debug(uint8_t flag);
+void rf12_use_interrupts(uint8_t flag);
 void rf12_reset_fifo(void);
 uint8_t rf12_read_status_MSB(void);
 

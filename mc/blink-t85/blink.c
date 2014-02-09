@@ -7,14 +7,20 @@
 
 // ======== timer ==================
 unsigned long int _millis = 0;
+uint16_t _1000us = 0;
 
-// timer overflow occur every 0.256 ms
+// timer overflow occur every 2.048 ms
 ISR(TIM0_OVF_vect)
 {
-	_millis++;
+	_1000us += 2048;
+	while (_1000us > 10000)
+	{
+		_millis += 10;
+		_1000us -= 10000;
+	}
 }
 
-unsigned long int tick_ms()
+unsigned long int tick_ms(void)
 {
 	uint64_t m;
 	cli();
@@ -25,17 +31,11 @@ unsigned long int tick_ms()
 
 void setup_timer(void)
 {
-	TCCR0B = (1<<CS02) | (1<<CS00); // F_CPU/1024 
+	TCCR0B = (1<<CS01); // F_CPU/8 
 	TIMSK = 1 << TOIE0; // enable timer overflow interrupt
 	sei();
 }
 
-uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
-void rf12_spi_init(void);
-uint16_t rf12_read_status(void);
-uint8_t rf12_read_status_MSB(void);
-
-volatile int c = 0;
 unsigned long last_dump = 0;
 unsigned long last_send = 0;
 
@@ -135,8 +135,9 @@ static void send_status(void)
 	tx(0);           // dummy byte
 	tx(0);           // dummy byte
 	while (!rf12_read_status_MSB()); // wait dummy byte
+	_delay_ms(50);
 	rf12_cmd(0x82, 0x0D); // idle
-	printf("%s %02X %02X\n", (char*)sbuf, crc & 0xFF, crc >> 8);
+	printf("sent: %scrc: %02X %02X\n", (char*)sbuf, crc & 0xFF, crc >> 8);
 	rf12_rx_on();
 	printf("rx on\n");
 }
