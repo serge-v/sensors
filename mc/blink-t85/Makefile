@@ -65,6 +65,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 all: build
+	avr-size $(TARGET).elf
 	@echo "\033[32mOK\033[0m"
 
 build: elf hex
