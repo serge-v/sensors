@@ -1,6 +1,7 @@
 #include "debug.h"
 #include <Arduino.h>
 #include <stdio.h>
+#include <util/delay.h>
 
 static uint8_t led_pin = 0xFF;
 
@@ -16,9 +17,9 @@ void led_dot()
 		return;
 
 	digitalWrite(led_pin, HIGH);
-	delay(80);
+	_delay_ms(80);
 	digitalWrite(led_pin, LOW);
-	delay(80);
+	_delay_ms(80);
 }
 
 void led_dash()
@@ -27,9 +28,9 @@ void led_dash()
 		return;
 
 	digitalWrite(led_pin, HIGH);
-	delay(240);
+	_delay_ms(240);
 	digitalWrite(led_pin, LOW);
-	delay(80);
+	_delay_ms(80);
 }
 
 static void print_bin(const char*s, uint8_t c)

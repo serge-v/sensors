@@ -11,7 +11,6 @@ CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I../lib
 TARGET = tx4
 
 SRC = tx4.c \
-    $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
     $(ARDUINO)/WInterrupts.c \
     $(LIB)/rfm12b.c \
