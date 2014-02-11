@@ -31,6 +31,7 @@ extern "C" {
 #	define SPI_SCK     2    // PB2, pin 7
 #endif
 
+void rf12_spi_init(void);
 void rf12_initialize(uint8_t id, uint8_t g);
 void rf12_send(uint8_t len);
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);

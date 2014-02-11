@@ -4,7 +4,7 @@
 
 static void uart_putchar(char c, FILE *stream)
 {
-	TxByte(c);
+//	TxByte(c);
 }
 
 FILE uart_output = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);

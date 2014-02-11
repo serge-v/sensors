@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <rfm12b.h>
 #include <dbg_uart.h>
+#include <am2302.h>
 
 // ======== timer ==================
 unsigned long int _millis = 0;
@@ -74,21 +75,24 @@ uint8_t verify_buf(void)
 
 void reset_buf(void)
 {
-	if (verify_buf())
+	if (len > 0)
 	{
-		buf[len+2] = 0;
-		printf("    %lu: %s", tick_ms(), (char*)(buf+2));
-	}
-	else
-	{
-		if (idx > 0)
+		if (verify_buf())
 		{
-			printf("    ");
-			for (int i = 0; i < idx; i++)
-				printf("%02X ", buf[i]);
-			printf("\n");
+			buf[len+2] = 0;
+			printf("    %lu: %s", tick_ms(), (char*)(buf+2));
 		}
-		printf("    n: %d, t: %u\n", len, timeouts);
+		else
+		{
+			if (idx > 0)
+			{
+				printf("    ");
+				for (int i = 0; i < idx; i++)
+					printf("%02X ", buf[i]);
+				printf("\n");
+			}
+			printf("    n: %d, t: %u\n", len, timeouts);
+		}
 	}
 
 	idx = 0;
@@ -103,13 +107,22 @@ static void tx(uint8_t c)
 	rf12_cmd(0xB8, c);
 }
 
+static uint16_t humidity = 0;
+static uint16_t temperature = 0;
+static uint8_t sensor_errno = 0;
+
 static void send_status(void)
 {
 	rf12_rx_off();
 	printf("rx off\n");
 
-	int n = sprintf((char*)sbuf, "s,%lu\n", tick_ms()); 
+	int n = 0;
 	
+	if (sensor_errno)
+		n = sprintf((char*)sbuf, "e,%02X\n", sensor_errno); 
+	else
+		n = sprintf((char*)sbuf, "t,%d,h,%d\n", temperature, humidity); 
+
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, 212);
 	crc = _crc16_update(crc, 0xA);
@@ -151,11 +164,15 @@ void loop(void)
 	if (cnt == 0)
 	{
 		timeouts++;
-		if (tick_ms() - last_dump > 5000)
+		if (tick_ms() - last_dump > 1000)
 			reset_buf();
 
-		if (tick_ms() - last_send > 20000)
+		if (tick_ms() - last_send > 10000)
 		{
+			cli();
+			sensor_errno = am2302(&humidity, &temperature);
+			sei();
+			rf12_spi_init(); // restore pins mode
 			send_status();
 			last_send = tick_ms();
 		}

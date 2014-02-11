@@ -1,35 +1,21 @@
 #include <Arduino.h>
 #include <rfm12b.h>
 #include <stdio.h>
+#include <debug.h>
 #include "serial.h"
 
-#define myNodeID 10          //node ID of tx (range 0-30)
+#define node_id     10       //node ID of tx (range 0-30)
 #define network     212      //network group (can be in the range 1-250).
-
-const uint8_t led_pin1 = 7;
-const uint8_t led_pin2 = 9;
-
-static void dot(void)
-{
-	digitalWrite(led_pin1, HIGH);
-	digitalWrite(led_pin2, HIGH);
-	delay(100);
-	digitalWrite(led_pin1, LOW);
-	digitalWrite(led_pin2, LOW);
-	delay(100);
-}
 
 FILE serial_stream = FDEV_SETUP_STREAM(serial_putchar, serial_getchar, _FDEV_SETUP_RW);
 
-
 void setup(void)
 {
+	led_init(PD7);
 	serial_init();
 	stdout = stdin = &serial_stream;
 
-	pinMode(led_pin1, OUTPUT);
-	pinMode(led_pin2, OUTPUT);
-	rf12_initialize(myNodeID, network);
+	rf12_initialize(node_id, network);
 	rf12_use_interrupts(1);
 	rf12_rx_on();
 	printf("tx4 %s %s\n", __DATE__, __TIME__);
@@ -104,13 +90,13 @@ void loop(void)
 			rf12_rx_off();
 
 		unsigned long time = millis();
-		uint8_t n = snprintf((char*)rf12_data, 20, "%d,t,%lu\n", led_pin1, time);
+		uint8_t n = snprintf((char*)rf12_data, 20, "%d,t,%lu\n", node_id, time);
 		rf12_data[n] = 0; // rf12_send will override it with crc
 		printf("%s", (char*)rf12_data);
 		rf12_send(n);
 		last_send = millis();
-		dot();
-		dot();
+		led_dot();
+		led_dot();
 
 		if (sts.rx_enabled)
 			rf12_rx_on();
@@ -120,7 +106,7 @@ void loop(void)
 	if (sts.rx_enabled && rcv_done)
 	{
 		print_buf();
-		dot();
+		led_dot();
 		rf12_rx_on();
 	}
 
@@ -135,4 +121,12 @@ void loop(void)
 		sts.tx_enabled = 1;
 		printf("tx auto enabled\n");
 	}
+}
+
+int main(void)
+{
+	setup();
+	
+	while(1)
+		loop();
 }

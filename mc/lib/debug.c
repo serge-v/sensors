@@ -1,5 +1,6 @@
 #include "debug.h"
 #include <Arduino.h>
+#include <stdio.h>
 
 static uint8_t led_pin = 0xFF;
 
@@ -33,38 +34,27 @@ void led_dash()
 
 static void print_bin(const char*s, uint8_t c)
 {
-	Serial.print(s);
-	Serial.print(' ');
+	printf("%s ", s);
 
 	uint8_t r = 0x80;
 
 	while (r)
 	{
 		if (c & r)
-			Serial.print('1');
+			printf("1");
 		else
-			Serial.print('0');
+			printf("0");
 		r >>= 1;
 	}
-	Serial.print(' ');
 
-	r = c >> 4;
-	if (r > 9)
-		Serial.print((char)(r + 55));
-	else
-		Serial.print((char)(r + 48));
-
-	r = c & 0x0F;
-	if (r > 9)
-		Serial.print((char)(r + 55));
-	else
-		Serial.print((char)(r + 48));
-	Serial.print('\n');
+	printf(" %02X\n", c);
 }
 
 void dump()
 {
+#ifdef USICR
 	print_bin("USICR:", USICR);
+#endif
 	print_bin("PORTB:", PORTB);
 	print_bin("DDRB :", DDRB);
 	print_bin("PINB :", PINB);

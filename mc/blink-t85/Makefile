@@ -16,7 +16,8 @@ SRC = \
     $(ARDUINO)/wiring_digital.c \
     $(ARDUINO)/WInterrupts.c \
     $(LIB)/dbg_uart.c \
-    $(LIB)/rfm12b.c
+    $(LIB)/rfm12b.c \
+    $(LIB)/am2302.c
 
 ASRC = \
     $(LIB)/basic_serial.S

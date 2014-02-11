@@ -14,13 +14,11 @@ SRC = tx4.c \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
     $(ARDUINO)/WInterrupts.c \
-    $(LIB)/rfm12b.c
+    $(LIB)/rfm12b.c \
+    $(LIB)/serial.c \
+    $(LIB)/debug.c
 
-CXXSRC = serial.cpp \
-    $(ARDUINO)/main.cpp \
-    $(ARDUINO)/HardwareSerial.cpp \
-    $(ARDUINO)/Print.cpp \
-    $(ARDUINO)/WString.cpp
+CXXSRC = 
 
 FORMAT = ihex
 UPLOAD_RATE = 115200
@@ -101,5 +99,6 @@ u2: $(TARGET).hex $(TARGET).eep
 include ../lib/make/elf.mk
 include ../lib/make/gcc.mk
 include ../lib/make/check.mk
+-include $(TARGET).dep
 
 .PHONY:	all build elf hex eep lss sym program coff extcoff clean depend

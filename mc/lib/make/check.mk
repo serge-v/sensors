@@ -11,3 +11,5 @@ clean:
 	ls -l --color=always
 
 
+depend:
+	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(CXXSRC) $(ASRC) > $(TARGET).dep
