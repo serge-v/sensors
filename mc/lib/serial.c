@@ -19,7 +19,7 @@ char serial_getchar(FILE *stream)
 	return UDR0;
 }
 
-void serial_init()
+void serial_init(void)
 {
 	UBRR0H = UBRRH_VALUE;
 	UBRR0L = UBRRL_VALUE;

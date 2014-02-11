@@ -1,7 +1,7 @@
-#include <Arduino.h>
 #include <avr/io.h>
 #include <util/crc16.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 #include <stdio.h>
 #include "rfm12b.h"
 
@@ -11,6 +11,13 @@
 static uint8_t nodeid;              // address of this node
 static uint8_t group;               // network group
 
+void (*int0_handler)(void) = NULL;
+
+ISR(INT0_vect)
+{
+	if (int0_handler)
+		int0_handler();
+}
 
 #ifdef SPDR
 
@@ -109,7 +116,7 @@ static struct config cfg = {
 	.use_interrupts = 0
 };
 
-static void rf12_tx_interrupt(void)
+static void tx_interrupt(void)
 {
 	rf12_cmd(0x00, 0x00);
 	rf12_cmd(0xB8, rf12_packet[sidx]);
@@ -134,7 +141,7 @@ uint8_t verify_data(void)
 	return (expected_crc == crc);
 }
 
-static void rf12_rx_interrupt(void)
+static void rx_interrupt(void)
 {
 	if (rcv_done)
 		return;
@@ -193,9 +200,22 @@ void print_buf()
 	}
 }
 
+static void enable_interrupt(void (*handler)(void))
+{
+	EICRA &= ~(_BV(ISC01) | _BV(ISC00)); // low level   
+	EIMSK |= _BV(INT0);
+	int0_handler = handler;
+}
+
+static void disable_interrupt(void)
+{
+	EIMSK &= ~(_BV(INT0));
+	int0_handler = NULL;
+}
+
 static void respond(uint8_t len)
 {
-	attachInterrupt(0, rf12_tx_interrupt, LOW);
+	enable_interrupt(tx_interrupt);
 
 	rf12_len = len;
 	uint8_t i = 0;
@@ -227,7 +247,7 @@ static void respond(uint8_t len)
 
 	while (sidx < send_len);
 
-	detachInterrupt(0);
+	disable_interrupt();
 
 	_delay_ms(100);
 
@@ -307,38 +327,35 @@ void rf12_send(uint8_t len)
 
 void rf12_spi_init(void)
 {
-	bitSet(SELECT_PORT, SPI_SS);
-	bitSet(SELECT_DDR, SPI_SS);
-	digitalWrite(SPI_SS, 1);
-	pinMode(SPI_SS, OUTPUT);
-	pinMode(SPI_SCK, OUTPUT);
+	SELECT_DDR |= _BV(SELECT_PIN) | _BV(SPI_SCK); // out
+	RF12_UNSELECT;
+
 #ifdef SPCR
-//	SPCR = _BV(SPE) | _BV(MSTR);
 	SPCR = _BV(SPE) | _BV(MSTR);
-	// use clk/2 (2x 1/4th) for sending (and clk/8 for recv, see rf12_xferSlow)
-//	SPSR |= _BV(SPI2X);
-	pinMode(SPI_MOSI, OUTPUT);
-	pinMode(SPI_MISO, INPUT);
+
+	SELECT_DDR |= _BV(SPI_MOSI);
+	SELECT_DDR &= ~_BV(SPI_MISO);
+
 	IRQ_DDR &= ~_BV(IRQ_PIN); // IRQ input
 	IRQ_PORT |= _BV(IRQ_PIN); // IRQ pullup
 #else
-	pinMode(SPI_MOSI, INPUT);
-	pinMode(SPI_MISO, OUTPUT);
-	USICR = bit(USIWM0);
+	SELECT_DDR |= _BV(SPI_MISO); // in attiny85 SO goes to SDO
+	SELECT_DDR &= ~_BV(SPI_MOSI); // in attiny85 SI goes to SDI
+	USICR = _BV(USIWM0);
 #endif
 }
 
 #ifdef SPCR
 uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 {
-	bitSet(SPCR, SPR0);
+	SPCR |= _BV(SPR0);
 
 	RF12_SELECT;
 	rf12_byte(highbyte);
 	uint8_t c = rf12_byte(lowbyte);
 	RF12_UNSELECT;
 
-	bitClear(SPCR, SPR0);
+	SPCR &= ~_BV(SPR0);
 	return c;
 }
 #else
@@ -407,14 +424,14 @@ void rf12_rx_on()
 	rf12_len = 0;
 	rcv_done = 0;
 	if (cfg.use_interrupts)
-		attachInterrupt(0, rf12_rx_interrupt, LOW);
+		enable_interrupt(rx_interrupt);
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
 
 void rf12_rx_off()
 {
 	if (cfg.use_interrupts)
-		detachInterrupt(0); // detach before disabling rx, otherwise it will stack in the interrupt
+		disable_interrupt();
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	receiving = 0;
 }

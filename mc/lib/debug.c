@@ -1,36 +1,35 @@
 #include "debug.h"
-#include <Arduino.h>
 #include <stdio.h>
+#include <avr/io.h>
 #include <util/delay.h>
 
-static uint8_t led_pin = 0xFF;
+static uint8_t led_pin = 7;
+static const uint8_t dot_len = 80; // ms
 
-void led_init(int pin)
+void led_init(void)
 {
-	led_pin = pin;
-	pinMode(led_pin, OUTPUT);
+	DDRD |= _BV(led_pin);
 }
 
 void led_dot()
 {
-	if (led_pin == 0xFF)
-		return;
-
-	digitalWrite(led_pin, HIGH);
-	_delay_ms(80);
-	digitalWrite(led_pin, LOW);
-	_delay_ms(80);
+	PORTD |= _BV(led_pin);
+	_delay_ms(dot_len);
+	PORTD &= ~(_BV(led_pin));
+	_delay_ms(dot_len);
 }
 
 void led_dash()
 {
-	if (led_pin == 0xFF)
-		return;
+	PORTD |= _BV(led_pin);
+	_delay_ms(dot_len * 3);
+	PORTD &= ~(_BV(led_pin));
+	_delay_ms(dot_len);
+}
 
-	digitalWrite(led_pin, HIGH);
-	_delay_ms(240);
-	digitalWrite(led_pin, LOW);
-	_delay_ms(80);
+void led_space()
+{
+	_delay_ms(dot_len * 3);
 }
 
 static void print_bin(const char*s, uint8_t c)

@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <avr/io.h>
 #include <rfm12b.h>
 __RFM12B_PINS__
 "SPI_SS  "   SPI_SS

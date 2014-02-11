@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include <rfm12b.h>
 #include <stdio.h>
@@ -10,11 +10,20 @@
 #define network     212      //network group (can be in the range 1-250).
 
 // ======== timer ==================
+// overflow time = 1000ms/(16MHz/1024)*8bit = 16.384ms
+
 unsigned long int time_ms = 0;
+unsigned int _ns = 0;
 
 ISR(TIMER0_OVF_vect)
 {
-	time_ms += 64;
+	time_ms += 16;
+	_ns += 384;
+	if (_ns > 1000)
+	{
+		time_ms++;
+		_ns -= 1000;
+	}
 }
 
 unsigned long int tick_ms(void)
@@ -45,15 +54,29 @@ static void enter_setup_mode(void)
 
 	do
 	{
-		char c = getchar();
+		c = getchar();
 
 	}
 	while (c != 'q');
 }
 
+static void blink_start(void)
+{
+	led_dash(); led_dot(); led_dot();
+	led_space();
+	led_dot();
+	led_space();
+	led_space();
+	led_space();
+	led_dash();
+	led_space();
+}
+
 void setup(void)
 {
-	led_init(PD7);
+	led_init();
+	blink_start();
+
 	serial_init();
 	stdout = stdin = &serial_stream;
 
@@ -73,15 +96,17 @@ void setup(void)
 				setup_mode = 1;
 		}
 	}
-	
+
 	if (setup_mode)
 		enter_setup_mode();
-	
-	printf("init\n");
 
+	printf("i");
 	rf12_initialize(node_id, network);
+	printf("n");
 	rf12_use_interrupts(1);
+	printf("i");
 	rf12_rx_on();
+	printf("t\n");
 }
 
 unsigned long last_send = 0;
@@ -109,7 +134,7 @@ static void handle_serial(void)
 {
 	sts.auto_start = 0;
 
-	byte c = getchar();
+	char c = getchar();
 	switch (c)
 	{
 	case 'i': // init
@@ -152,11 +177,7 @@ static void handle_serial(void)
 void loop(void)
 {
 	if (serial_available())
-	{
-		printf("sa\n");
 		handle_serial();
-		printf("hs\n");
-	}
 
 	if (sts.tx_enabled && !receiving && tick_ms() - last_send > interval)
 	{

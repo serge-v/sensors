@@ -4,15 +4,12 @@ F_CPU = 16000000
 PORT1 = /dev/ttyACM0
 PORT2 = /dev/ttyACM1
 
-ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
 LIB = ../lib
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I../lib
+CINCS = -I../lib
 
 TARGET = tx4
 
 SRC = tx4.c \
-    $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/WInterrupts.c \
     $(LIB)/rfm12b.c \
     $(LIB)/serial.c \
     $(LIB)/debug.c
@@ -28,11 +25,11 @@ DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
-CXXDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
+CDEFS = -DF_CPU=$(F_CPU)
+CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
-CXXINCS = -I$(ARDUINO)
+CXXINCS =
 
 CSTANDARD = -std=gnu99 -Wstrict-prototypes
 CWARN = -Wall
