@@ -11,82 +11,6 @@
 static uint8_t nodeid;              // address of this node
 static uint8_t group;               // network group
 
-void (*int0_handler)(void) = NULL;
-
-ISR(INT0_vect)
-{
-	if (int0_handler)
-		int0_handler();
-}
-
-#ifdef SPDR
-
-static uint8_t rf12_byte(uint8_t c)
-{
-	SPDR = c;
-	while (!(SPSR & _BV(SPIF)));
-	return SPDR;
-}
-
-uint16_t rf12_read_status()
-{
-	RF12_SELECT;
-	uint16_t c = rf12_byte(0x00) << 8;
-	c |= rf12_byte(0x00);
-	RF12_UNSELECT;
-	return c;
-}
-
-#else
-
-static void spi_run_clock(void)
-{
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-	USICR = _BV(USIWM0) | _BV(USITC);
-	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
-}
-
-uint16_t rf12_read_status()
-{
-	RF12_SELECT;
-	USIDR = 0x00;	//Status Read Command
-	spi_run_clock();
-	uint16_t c = USIDR << 8;
-	USIDR = 0x00; 	//Status Read Command
-	spi_run_clock();
-	c |= USIDR;
-	RF12_UNSELECT;
-	return c;
-}
-
-#define MOSI_LOW     (PORTB &= ~_BV(PB1))
-#define MISO_LEVEL   (PINB & _BV(PB0))
-
-uint8_t ffit = 0;
-
-uint8_t rf12_read_status_MSB()
-{
-    RF12_SELECT;
-    MOSI_LOW;
-    asm volatile("nop");
-    return MISO_LEVEL;
-}
-
-#endif
-
 // packet format:
 // [0]            : 0xAA
 // [1]            : 0x2D
@@ -108,37 +32,49 @@ volatile uint8_t rcv_done = 0;
 struct config
 {
 	uint8_t debug: 1;
-	uint8_t use_interrupts: 1;
 };
 
 static struct config cfg = {
-	.debug = 0,
-	.use_interrupts = 0
+	.debug = 0
 };
 
-static void tx_interrupt(void)
+#if defined(__AVR_ATmega328P__)
+
+void (*int0_handler)(void) = NULL;
+
+ISR(INT0_vect)
 {
-	rf12_cmd(0x00, 0x00);
-	rf12_cmd(0xB8, rf12_packet[sidx]);
-	sidx++;
+	if (int0_handler)
+		int0_handler();
 }
 
-uint8_t verify_data(void)
+static uint8_t rf12_byte(uint8_t c)
 {
-	uint16_t crc = ~0;
-	crc = _crc16_update(crc, group);
+	SPDR = c;
+	while (!(SPSR & _BV(SPIF)));
+	return SPDR;
+}
 
-	int i = 0;
-	for (i = 0; i < rf12_len + 2; i++)
-		crc = _crc16_update(crc, rf12_rx_buf[i]);
+uint16_t rf12_read_status()
+{
+	RF12_SELECT;
+	uint16_t c = rf12_byte(0x00) << 8;
+	c |= rf12_byte(0x00);
+	RF12_UNSELECT;
+	return c;
+}
 
-	uint16_t expected_crc = rf12_rx_buf[i++];
-	expected_crc |= rf12_rx_buf[i] << 8;
+static void enable_interrupt(void (*handler)(void))
+{
+	EICRA &= ~(_BV(ISC01) | _BV(ISC00)); // low level   
+	EIMSK |= _BV(INT0);
+	int0_handler = handler;
+}
 
-	if (expected_crc != crc && cfg.debug)
-		printf(" ex: %4X, calc: %4X\n", expected_crc, crc);
-
-	return (expected_crc == crc);
+static void disable_interrupt(void)
+{
+	EIMSK &= ~(_BV(INT0));
+	int0_handler = NULL;
 }
 
 static void rx_interrupt(void)
@@ -182,35 +118,11 @@ static void rx_interrupt(void)
 	}
 }
 
-void print_buf()
+static void tx_interrupt(void)
 {
-	if (!cfg.debug && rf12_len == 0)
-		return;
-
-	if (verify_data())
-	{
-		rf12_data[rf12_len] = 0;
-		printf("    len: %d, data: %s", rf12_len, (char*)rf12_data);
-	}
-	else
-	{
-		for (int i = 0; i < rf12_len+4; i++)
-			printf("%02X ", rf12_rx_buf[i]);
-		printf(" len: %d\n", rf12_len);
-	}
-}
-
-static void enable_interrupt(void (*handler)(void))
-{
-	EICRA &= ~(_BV(ISC01) | _BV(ISC00)); // low level   
-	EIMSK |= _BV(INT0);
-	int0_handler = handler;
-}
-
-static void disable_interrupt(void)
-{
-	EIMSK &= ~(_BV(INT0));
-	int0_handler = NULL;
+	rf12_cmd(0x00, 0x00);
+	rf12_cmd(0xB8, rf12_packet[sidx]);
+	sidx++;
 }
 
 static void respond(uint8_t len)
@@ -265,9 +177,57 @@ static void respond(uint8_t len)
 
 }
 
+#else
+
+static void spi_run_clock(void)
+{
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+	USICR = _BV(USIWM0) | _BV(USITC);
+	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
+}
+
+uint16_t rf12_read_status()
+{
+	RF12_SELECT;
+	USIDR = 0x00;	//Status Read Command
+	spi_run_clock();
+	uint16_t c = USIDR << 8;
+	USIDR = 0x00; 	//Status Read Command
+	spi_run_clock();
+	c |= USIDR;
+	RF12_UNSELECT;
+	return c;
+}
+
+#define MOSI_LOW     (PORTB &= ~_BV(PB1))
+#define MISO_LEVEL   (PINB & _BV(PB0))
+
+uint8_t ffit = 0;
+
+uint8_t rf12_read_status_MSB()
+{
+    RF12_SELECT;
+    MOSI_LOW;
+    asm volatile("nop");
+    return MISO_LEVEL;
+}
+
 #define WAIT_IRQ_LO() while( IRQ_PORT & _BV(IRQ_PIN) );
 
-static void respond2(uint8_t len)
+static void respond(uint8_t len)
 {
 	sidx = 0;
 	rf12_len = len;
@@ -317,12 +277,48 @@ static void respond2(uint8_t len)
 	}
 }
 
+#endif
+
+uint8_t verify_data(void)
+{
+	uint16_t crc = ~0;
+	crc = _crc16_update(crc, group);
+
+	int i = 0;
+	for (i = 0; i < rf12_len + 2; i++)
+		crc = _crc16_update(crc, rf12_rx_buf[i]);
+
+	uint16_t expected_crc = rf12_rx_buf[i++];
+	expected_crc |= rf12_rx_buf[i] << 8;
+
+	if (expected_crc != crc && cfg.debug)
+		printf(" ex: %4X, calc: %4X\n", expected_crc, crc);
+
+	return (expected_crc == crc);
+}
+
+void print_buf()
+{
+	if (!cfg.debug && rf12_len == 0)
+		return;
+
+	if (verify_data())
+	{
+		rf12_data[rf12_len] = 0;
+		printf("    len: %d, data: %s", rf12_len, (char*)rf12_data);
+	}
+	else
+	{
+		for (int i = 0; i < rf12_len+4; i++)
+			printf("%02X ", rf12_rx_buf[i]);
+		printf(" len: %d\n", rf12_len);
+	}
+}
+
+
 void rf12_send(uint8_t len)
 {
-	if (cfg.use_interrupts)
-		respond(len);
-	else
-		respond2(len);
+	respond(len);
 }
 
 void rf12_spi_init(void)
@@ -423,15 +419,17 @@ void rf12_rx_on()
 	sidx = 0;
 	rf12_len = 0;
 	rcv_done = 0;
-	if (cfg.use_interrupts)
-		enable_interrupt(rx_interrupt);
+#if defined(__AVR_ATmega328P__)
+	enable_interrupt(rx_interrupt);
+#endif
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
 
 void rf12_rx_off()
 {
-	if (cfg.use_interrupts)
-		disable_interrupt();
+#if defined(__AVR_ATmega328P__)
+	disable_interrupt();
+#endif
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	receiving = 0;
 }
@@ -439,9 +437,4 @@ void rf12_rx_off()
 void rf12_debug(uint8_t flag)
 {
 	cfg.debug = flag;
-}
-
-void rf12_use_interrupts(uint8_t flag)
-{
-	cfg.use_interrupts = flag;
 }

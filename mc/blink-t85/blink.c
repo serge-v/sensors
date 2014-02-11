@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <avr/interrupt.h>
 #include <util/crc16.h>
 #include <util/delay.h>
 #include <debug.h>

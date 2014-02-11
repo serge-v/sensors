@@ -19,8 +19,6 @@ CXXSRC =
 FORMAT = ihex
 UPLOAD_RATE = 115200
 
-MAKEFILE = Makefile
-
 DEBUG = stabs
 OPT = s
 

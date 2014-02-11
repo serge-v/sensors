@@ -103,7 +103,6 @@ void setup(void)
 	printf("i");
 	rf12_initialize(node_id, network);
 	printf("n");
-	rf12_use_interrupts(1);
 	printf("i");
 	rf12_rx_on();
 	printf("t\n");

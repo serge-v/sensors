@@ -3,18 +3,13 @@ F_CPU = 1000000
 
 PORT = /dev/ttyACM1
 
-ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
 LIB = ../lib
-CINCS = -I$(ARDUINO) -I../lib
+CINCS = -I../lib
 
 TARGET = blink
 
 SRC = \
     $(TARGET).c \
-    $(ARDUINO)/pins_arduino.c \
-    $(ARDUINO)/wiring.c \
-    $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/WInterrupts.c \
     $(LIB)/dbg_uart.c \
     $(LIB)/rfm12b.c \
     $(LIB)/am2302.c
