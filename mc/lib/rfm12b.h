@@ -25,22 +25,30 @@ extern "C" {
 #	define SPI_SCK     PB2  // pin 7
 #endif
 
-void rf12_spi_init(void);
-void rf12_initialize(uint8_t id, uint8_t g);
+enum rf12_state
+{
+	IDLE,
+	TX_IN_PROGRESS,
+	TX_DONE,
+	RX_ON,
+	RX_IN_PROGRESS,
+	RX_DONE_OK,
+	RX_DONE_OVERFLOW,
+	RX_DONE_BADCRC
+};
+
+void rf12_initialize(uint8_t id, uint8_t group);
+void rf12_debug(uint8_t flag);
 void rf12_send(uint8_t len);
-uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
 void rf12_rx_on(void);
 void rf12_rx_off(void);
-void print_buf(void);
-uint16_t rf12_read_status(void);
-void rf12_debug(uint8_t flag);
-void rf12_reset_fifo(void);
-uint8_t rf12_read_status_MSB(void);
+void rf12_send_sync(const char* s, uint8_t n);
+uint8_t rf12_wait_rx(void);
+uint8_t rf12_read_rx(void);
 
-extern uint8_t* rf12_data;
-extern volatile uint8_t receiving;
-extern volatile uint8_t rcv_done;
-extern volatile uint8_t rf12_len;
+extern uint8_t*                  rf12_data;
+extern volatile uint8_t          rf12_len;
+extern volatile enum rf12_state  rf12_state;
 
 #ifdef __cplusplus
 }

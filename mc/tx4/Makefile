@@ -73,6 +73,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 # Default target.
 all: build
 	@echo $(TARGET): $(MCU) $(F_CPU) Hz
+	@avr-size $(TARGET).elf
 	@echo "\033[32mOK\033[0m"
 
 build: elf hex
@@ -82,7 +83,7 @@ u1: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(PORT1)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS1) $(AVRDUDE_WRITE_FLASH)
 	sleep 5
-	echo r111t > $(PORT1)
+	echo d > $(PORT1)
 
 u2: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(PORT2)"`

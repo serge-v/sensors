@@ -127,8 +127,6 @@ struct settings sts = {
 	.debug = 0
 };
 
-unsigned int loop_count = 0;
-
 static void handle_serial(void)
 {
 	sts.auto_start = 0;
@@ -163,12 +161,21 @@ static void handle_serial(void)
 		break;
 	case 'r':
 		sts.rx_enabled = !sts.rx_enabled;
+		if (sts.rx_enabled)
+		{
+			rf12_rx_on();
+		}
+		else
+		{
+			rf12_rx_off();
+			rf12_state = IDLE;
+		}
 		printf("rx: %d\n", sts.rx_enabled);
 		break;
 	case 'd':
-		printf("loop: %u\n", loop_count);
 		printf("tick_ms: %lu\n", tick_ms());
 		printf("last_send: %lu\n", last_send);
+		printf("rf12_state: %d\n", rf12_state);
 		break;
 	}
 }
@@ -178,33 +185,48 @@ void loop(void)
 	if (serial_available())
 		handle_serial();
 
-	if (sts.tx_enabled && !receiving && tick_ms() - last_send > interval)
+	if (sts.tx_enabled && (rf12_state <= RX_ON) && ((tick_ms() - last_send) > interval))
 	{
 		if (sts.rx_enabled)
 			rf12_rx_off();
 
+		char s[30];
 		unsigned long time = tick_ms();
-		uint8_t n = snprintf((char*)rf12_data, 20, "%d,t,%lu\n", node_id, time);
+		uint8_t n = snprintf(s, 20, "%d,t,%lu\n", node_id, time);
+		/*
 		rf12_data[n] = 0; // rf12_send will override it with crc
-		printf("%s", (char*)rf12_data);
+		printf("%s", rf12_data);
 		rf12_send(n);
-		last_send = tick_ms();
+		
+		*/
+		
+		printf("%s", s);
+		rf12_send_sync(s, n);
 		led_dot();
 		led_dot();
+		last_send = tick_ms() - 1;
 
 		if (sts.rx_enabled)
 			rf12_rx_on();
 	}
 
 
-	if (sts.rx_enabled && rcv_done)
+	if (rf12_state >= RX_DONE_OK)
 	{
-		print_buf();
+		printf("    rx_state: %d, len: %d", rf12_state, rf12_len);
+		if (rf12_state == RX_DONE_OK)
+		{
+			rf12_data[rf12_len] = 0;
+			printf("    %s", rf12_data);
+			rf12_state = IDLE;
+		}
+		else
+			printf("\n");
 		led_dot();
-		rf12_rx_on();
+		
+		if (sts.rx_enabled)
+			rf12_rx_on();
 	}
-	
-	loop_count++;
 }
 
 int main(void)

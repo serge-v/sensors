@@ -46,153 +46,90 @@ void setup(void)
 	dbg_uart_init();
 	printf("\n\n\n\nb");
 	rf12_initialize(10, 212);
-	printf("l");
-	rf12_rx_on();
-	printf("i");
 	setup_timer();
-	printf("nk %s %s\n", __DATE__, __TIME__);
+	printf("link %s %s\n", __DATE__, __TIME__);
+	rf12_send_sync("blink\n", 6);
 }
 
-uint8_t buf[20];
-uint8_t sbuf[20];
-uint8_t idx = 0;
-uint8_t len = 0;
-unsigned int timeouts = 0;
-
-uint8_t verify_buf(void)
+struct rht03_status
 {
-	uint16_t crc = ~0;
-	crc = _crc16_update(crc, 212);
+	uint16_t humidity;
+	uint16_t temperature;
+	uint8_t error;
+};
 
-	uint8_t i = 0;
-	for (i = 0; i < len + 2; i++)
-		crc = _crc16_update(crc, buf[i]);
+static struct rht03_status sensor = {
+	.humidity = 0,
+	.temperature = 0,
+	.error = 0
+};
 
-	uint16_t expected_crc = buf[i++];
-	expected_crc |= buf[i] << 8;
-
-	return (expected_crc == crc);
-}
-
-void reset_buf(void)
-{
-	if (len > 0)
-	{
-		if (verify_buf())
-		{
-			buf[len+2] = 0;
-			printf("    %lu: %s", tick_ms(), (char*)(buf+2));
-		}
-		else
-		{
-			if (idx > 0)
-			{
-				printf("    ");
-				for (int i = 0; i < idx; i++)
-					printf("%02X ", buf[i]);
-				printf("\n");
-			}
-			printf("    n: %d, t: %u\n", len, timeouts);
-		}
-	}
-
-	idx = 0;
-	len = 0;
-	rf12_rx_on();
-	last_dump = tick_ms();
-}
-
-static void tx(uint8_t c)
-{
-	while (!rf12_read_status_MSB());
-	rf12_cmd(0xB8, c);
-}
-
-static uint16_t humidity = 0;
-static uint16_t temperature = 0;
-static uint8_t sensor_errno = 0;
+uint8_t dbgstatus = 0;
 
 static void send_status(void)
 {
 	rf12_rx_off();
-	printf("rx off\n");
+	printf("-rx off\n");
 
 	int n = 0;
+	char s[20];
 	
-	if (sensor_errno)
-		n = sprintf((char*)sbuf, "e,%02X\n", sensor_errno); 
+	if (sensor.error)
+		n = sprintf(s, "e,%02X\n", sensor.error); 
 	else
-		n = sprintf((char*)sbuf, "t,%d,h,%d\n", temperature, humidity); 
+		n = sprintf(s, "t,%d,h,%d,%02X\n", sensor.temperature, sensor.humidity, dbgstatus); 
 
-	uint16_t crc = ~0;
-	crc = _crc16_update(crc, 212);
-	crc = _crc16_update(crc, 0xA);
-	crc = _crc16_update(crc, n);
-	for (uint8_t i = 0; i < n; i++)
-		crc = _crc16_update(crc, sbuf[i]);
-
-	printf("sending %s", sbuf);
-	rf12_reset_fifo();
-
-	rf12_cmd(0x82, 0x3D); // start tx
-
-	tx(0xAA);        // preamble
-	tx(0x2D);        // sync hi byte
-	tx(0xD4);        // sync low byte
-	tx(0x0A);        // id
-	tx(n);           // len
-	for (uint8_t i = 0; i < n; i++)
-		tx(sbuf[i]);
-	
-	tx(crc & 0xFF);  // crc lo
-	tx(crc >> 8);    // crc hi
-	tx(0);           // dummy byte
-	tx(0);           // dummy byte
-	while (!rf12_read_status_MSB()); // wait dummy byte
-	_delay_ms(50);
-	rf12_cmd(0x82, 0x0D); // idle
-	printf("sent: %scrc: %02X %02X\n", (char*)sbuf, crc & 0xFF, crc >> 8);
+	dbgstatus = 0;
+	rf12_send_sync(s, n);
+	printf("%s\n", s);
 	rf12_rx_on();
-	printf("rx on\n");
+	printf("-rx on\n");
 }
 
 void loop(void)
 {
-	uint16_t cnt = 0xFFFF;
-
-	while (!rf12_read_status_MSB() && --cnt);
-
-	if (cnt == 0)
+	if (rf12_wait_rx())
 	{
-		timeouts++;
-		if (tick_ms() - last_dump > 1000)
-			reset_buf();
+		dbgstatus |= 0x80;
 
-		if (tick_ms() - last_send > 10000)
+		enum rf12_state st = rf12_read_rx();
+
+		if (st == RX_IN_PROGRESS)
+			return;
+
+		dbgstatus |= 0x40;
+		
+		rf12_rx_off();
+		if (st == RX_DONE_OK)
 		{
-			cli();
-			sensor_errno = am2302(&humidity, &temperature);
-			sei();
-			rf12_spi_init(); // restore pins mode
-			send_status();
-			last_send = tick_ms();
+			dbgstatus |= 0x20;
+			rf12_data[rf12_len] = 0;
+			printf("    %s", rf12_data);
+			_delay_ms(300);
+			rf12_send_sync("a\n", 2);
 		}
+		else
+		{
+			printf("    rx12_state: %d\n", st);
+			_delay_ms(300);
+			char s[20];
+			uint8_t n = snprintf(s, 20, "n,%d\n", rf12_state);
+			rf12_send_sync(s, n);
+		}
+		
+		rf12_rx_on();
 		return;
+
 	}
 
-	uint8_t c = rf12_cmd(0xB0, 0x00);
-	buf[idx++] = c;
-
-	if (idx == 2)
-		len = c;
-
-	if (len >= 20)
-		len = 20;
-
-	timeouts = 0;
-
-	if (idx == len + 4)
-		reset_buf();
+	if (tick_ms() - last_send > 10000)
+	{
+		cli();
+		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
+		sei();
+		send_status();
+		last_send = tick_ms();
+	}
 }
 
 int main(void)

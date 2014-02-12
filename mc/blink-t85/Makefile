@@ -72,6 +72,7 @@ upload: $(TARGET).hex $(TARGET).eep
 	sleep 1
 	echo 1 > $(AVRDUDE_PORT)
 
+-include $(TARGET).dep
 include ../lib/make/elf.mk
 include ../lib/make/gcc.mk
 include ../lib/make/burn.mk

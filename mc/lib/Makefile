@@ -48,9 +48,6 @@ all: uart_test.hex rfm12b_test.hex rfm12b_calc
 uart_test.elf: uart_test.o dbg_uart.o basic_serial.o
 	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS) -lc
 
-depend: uart_test.c dbg_uart.c basic_serial.S
-	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $< $(ASRC) >> uart_test.dep
-
 rfm12b_test.elf: rfm12b.c rfm12b_test.c
 	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
 
@@ -71,4 +68,4 @@ upload: uart_test.hex
 
 include ../lib/make/gcc.mk
 include ../lib/make/check.mk
-include uart_test.dep
+-include uart_test.dep

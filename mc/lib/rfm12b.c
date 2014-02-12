@@ -8,8 +8,8 @@
 #define RF12_SELECT   (SELECT_PORT &= ~_BV(SELECT_PIN))
 #define RF12_UNSELECT (SELECT_PORT |= _BV(SELECT_PIN))
 
-static uint8_t nodeid;              // address of this node
-static uint8_t group;               // network group
+static uint8_t node_id;
+static uint8_t group;
 
 // packet format:
 // [0]            : 0xAA
@@ -24,10 +24,13 @@ uint8_t rf12_packet[30];
 uint8_t* rf12_rx_buf = &rf12_packet[3]; // 3 preambe bytes are consumed by hardware
 uint8_t* rf12_data = &rf12_packet[5];
 
-volatile uint8_t rf12_len = 0;
-volatile uint8_t sidx = 0;
-volatile uint8_t receiving = 0;
-volatile uint8_t rcv_done = 0;
+volatile uint8_t          rf12_len = 0;
+volatile uint8_t          sidx = 0;
+volatile enum rf12_state  rf12_state = IDLE;
+
+uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte);
+void rf12_reset_fifo(void);
+uint8_t rf12_read_status_MSB(void);
 
 struct config
 {
@@ -38,7 +41,43 @@ static struct config cfg = {
 	.debug = 0
 };
 
+static void
+start_tx(void)
+{
+	rf12_state = TX_IN_PROGRESS;
+	rf12_cmd(0x82, 0x3D);
+}
+
+static void
+set_idle(void)
+{
+	rf12_cmd(0x82, 0x0D);
+	rf12_state = IDLE;
+}
+
+uint8_t
+verify_data(void)
+{
+	uint16_t crc = ~0;
+	crc = _crc16_update(crc, group);
+
+	int i = 0;
+	for (i = 0; i < rf12_len + 2; i++)
+		crc = _crc16_update(crc, rf12_rx_buf[i]);
+
+	uint16_t expected_crc = rf12_rx_buf[i++];
+	expected_crc |= rf12_rx_buf[i] << 8;
+
+	if (expected_crc != crc && cfg.debug)
+		printf(" ex: %4X, calc: %4X\n", expected_crc, crc);
+
+	return (expected_crc == crc);
+}
+
 #if defined(__AVR_ATmega328P__)
+
+#define MOSI_LOW     (PORTB &= ~_BV(SPI_MOSI))
+#define MISO_LEVEL   (PINB & _BV(SPI_MISO))
 
 void (*int0_handler)(void) = NULL;
 
@@ -48,14 +87,16 @@ ISR(INT0_vect)
 		int0_handler();
 }
 
-static uint8_t rf12_byte(uint8_t c)
+static uint8_t
+rf12_byte(uint8_t c)
 {
 	SPDR = c;
 	while (!(SPSR & _BV(SPIF)));
 	return SPDR;
 }
 
-uint16_t rf12_read_status()
+uint16_t
+rf12_read_status(void)
 {
 	RF12_SELECT;
 	uint16_t c = rf12_byte(0x00) << 8;
@@ -64,40 +105,40 @@ uint16_t rf12_read_status()
 	return c;
 }
 
-static void enable_interrupt(void (*handler)(void))
+static void
+enable_interrupt(void (*handler)(void))
 {
+	int0_handler = handler;
 	EICRA &= ~(_BV(ISC01) | _BV(ISC00)); // low level   
 	EIMSK |= _BV(INT0);
-	int0_handler = handler;
 }
 
-static void disable_interrupt(void)
+static void
+disable_interrupt(void)
 {
 	EIMSK &= ~(_BV(INT0));
 	int0_handler = NULL;
 }
 
-static void rx_interrupt(void)
+static void
+rx_interrupt(void)
 {
-	if (rcv_done)
+	if (rf12_state >= RX_DONE_OK)
 		return;
+
+	if (sidx == 0)
+		rf12_state = RX_IN_PROGRESS;
 
 	uint16_t st = rf12_read_status();
 	if (!(st & 0x8000))
 	{
 		if (cfg.debug)
-			printf("rst: %04X\n", st);
+			printf("rx st: %04X, rf12_state: %d\n", st, rf12_state);
 		return;
 	}
 
 	uint8_t c = rf12_cmd(0xB0, 0x00);
 	rf12_rx_buf[sidx++] = c;
-
-	if (sidx == 1)
-	{
-		receiving = 1;
-		return;
-	}
 
 	if (sidx == 2)
 	{
@@ -105,27 +146,44 @@ static void rx_interrupt(void)
 		if (rf12_len == 0 || rf12_len > 20)
 		{
 			rf12_len = 0;
+			rf12_state = RX_DONE_OVERFLOW;
 			rf12_rx_off();
-			rcv_done = 1;
 		}
 		return;
 	}
 
 	if (sidx == rf12_len + 4)
 	{
+		if (verify_data())
+			rf12_state = RX_DONE_OK;
+		else
+			rf12_state = RX_DONE_BADCRC;
 		rf12_rx_off();
-		rcv_done = 1;
 	}
 }
 
-static void tx_interrupt(void)
+static void
+tx_interrupt(void)
 {
-	rf12_cmd(0x00, 0x00);
+	if (rf12_state != TX_IN_PROGRESS)
+		return;
+
+	uint16_t st = rf12_read_status();
+	if (!(st & 0x8000))
+	{
+		if (cfg.debug)
+			printf("tx st: %04X\n", st);
+		return;
+	}
+
 	rf12_cmd(0xB8, rf12_packet[sidx]);
 	sidx++;
+	if (rf12_len == sidx)
+		rf12_state = TX_DONE;
 }
 
-static void respond(uint8_t len)
+static void
+respond(uint8_t len)
 {
 	enable_interrupt(tx_interrupt);
 
@@ -155,9 +213,9 @@ static void respond(uint8_t len)
 	rf12_cmd(0xB8, 0xAA);
 	rf12_cmd(0xB8, 0xAA);
 
-	rf12_cmd(0x82, 0x3D); // start tx
+	start_tx();
 
-	while (sidx < send_len);
+	while (rf12_state != TX_DONE);
 
 	disable_interrupt();
 
@@ -173,13 +231,17 @@ static void respond(uint8_t len)
 		printf("send_len: %d\n", send_len);
 	}
 
-	rf12_cmd(0x82, 0x0D); // idle
+	set_idle();
 
 }
 
-#else
+#elif defined(__AVR_ATtiny85__)
 
-static void spi_run_clock(void)
+#define MOSI_LOW     (PORTB &= ~_BV(PB1))
+#define MISO_LEVEL   (PINB & _BV(PB0))
+
+static void
+spi_run_clock(void)
 {
 	USICR = _BV(USIWM0) | _BV(USITC);
 	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
@@ -199,7 +261,8 @@ static void spi_run_clock(void)
 	USICR = _BV(USIWM0) | _BV(USITC) | _BV(USICLK);
 }
 
-uint16_t rf12_read_status()
+uint16_t
+rf12_read_status(void)
 {
 	RF12_SELECT;
 	USIDR = 0x00;	//Status Read Command
@@ -212,22 +275,10 @@ uint16_t rf12_read_status()
 	return c;
 }
 
-#define MOSI_LOW     (PORTB &= ~_BV(PB1))
-#define MISO_LEVEL   (PINB & _BV(PB0))
-
-uint8_t ffit = 0;
-
-uint8_t rf12_read_status_MSB()
-{
-    RF12_SELECT;
-    MOSI_LOW;
-    asm volatile("nop");
-    return MISO_LEVEL;
-}
-
 #define WAIT_IRQ_LO() while( IRQ_PORT & _BV(IRQ_PIN) );
 
-static void respond(uint8_t len)
+static void
+respond(uint8_t len)
 {
 	sidx = 0;
 	rf12_len = len;
@@ -248,7 +299,7 @@ static void respond(uint8_t len)
 	rf12_rx_buf[i++] = crc;
 	rf12_rx_buf[i] = crc >> 8;
 
-	rf12_cmd(0x82, 0x3D); // start tx
+	start_tx();
 
 	// preamble(3) + (id, len)(2) + data len + crc(2)
 	const uint8_t send_len = 3 + 2 + len + 2;
@@ -264,7 +315,7 @@ static void respond(uint8_t len)
 	rf12_cmd(0xB8, 0x00);
 	rf12_cmd(0x00, 0x00);
 
-	rf12_cmd(0x82, 0x0D); // idle
+	set_idle();
 
 	if (cfg.debug)
 	{
@@ -277,27 +328,100 @@ static void respond(uint8_t len)
 	}
 }
 
-#endif
-
-uint8_t verify_data(void)
+uint8_t rf12_wait_rx()
 {
-	uint16_t crc = ~0;
-	crc = _crc16_update(crc, group);
-
-	int i = 0;
-	for (i = 0; i < rf12_len + 2; i++)
-		crc = _crc16_update(crc, rf12_rx_buf[i]);
-
-	uint16_t expected_crc = rf12_rx_buf[i++];
-	expected_crc |= rf12_rx_buf[i] << 8;
-
-	if (expected_crc != crc && cfg.debug)
-		printf(" ex: %4X, calc: %4X\n", expected_crc, crc);
-
-	return (expected_crc == crc);
+	uint16_t cnt = 0xFFFF;
+	while (!rf12_read_status_MSB() && --cnt);
+	return (cnt > 0);
 }
 
-void print_buf()
+uint8_t rf12_read_rx(void)
+{
+	if (sidx == 0)
+		rf12_state = RX_IN_PROGRESS;
+
+	uint8_t c = rf12_cmd(0xB0, 0x00);
+	rf12_rx_buf[sidx++] = c;
+
+	if (sidx == 2)
+		rf12_len = c;
+
+	if (rf12_len >= 20)
+	{
+		rf12_state = RX_DONE_OVERFLOW;
+		rf12_len = 20;
+	}
+
+	if (sidx == rf12_len + 4)
+	{
+		if (verify_data())
+			rf12_state = RX_DONE_OK;
+		else
+			rf12_state = RX_DONE_BADCRC;
+	}
+	
+	return rf12_state;
+}
+
+
+// ATTiny85
+#else
+#pragma error ("MCU is not specified")
+#endif
+
+uint8_t
+rf12_read_status_MSB(void)
+{
+    RF12_SELECT;
+    MOSI_LOW;
+    asm volatile("nop");
+    return MISO_LEVEL;
+}
+
+static void
+tx(uint8_t c)
+{
+	while (!rf12_read_status_MSB());
+	rf12_cmd(0xB8, c);
+}
+
+void
+rf12_send_sync(const char*s, uint8_t n)
+{
+	uint16_t crc = ~0;
+
+	crc = _crc16_update(crc, group);
+	crc = _crc16_update(crc, node_id);
+	crc = _crc16_update(crc, n);
+
+	for (uint8_t i = 0; i < n; i++)
+		crc = _crc16_update(crc, s[i]);
+
+	rf12_reset_fifo();
+
+	start_tx();
+
+	tx(0xAA);        // preamble
+	tx(0x2D);        // sync hi byte
+	tx(0xD4);        // sync low byte
+	tx(0x0A);        // id
+	tx(n);           // len
+	
+	for (uint8_t i = 0; i < n; i++)
+		tx(s[i]);
+	
+	tx(crc & 0xFF);  // crc lo
+	tx(crc >> 8);    // crc hi
+	tx(0);           // dummy byte
+	tx(0);           // dummy byte
+	while (!rf12_read_status_MSB()); // wait dummy byte to complete
+	_delay_ms(50); // not sure if this is required
+
+	set_idle();
+}
+
+void
+print_buf(void)
 {
 	if (!cfg.debug && rf12_len == 0)
 		return;
@@ -316,12 +440,14 @@ void print_buf()
 }
 
 
-void rf12_send(uint8_t len)
+void
+rf12_send(uint8_t len)
 {
 	respond(len);
 }
 
-void rf12_spi_init(void)
+void
+rf12_spi_init(void)
 {
 	SELECT_DDR |= _BV(SELECT_PIN) | _BV(SPI_SCK); // out
 	RF12_UNSELECT;
@@ -342,7 +468,9 @@ void rf12_spi_init(void)
 }
 
 #ifdef SPCR
-uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
+
+uint8_t
+rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 {
 	SPCR |= _BV(SPR0);
 
@@ -354,9 +482,11 @@ uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 	SPCR &= ~_BV(SPR0);
 	return c;
 }
+
 #else
 
-uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
+uint8_t
+rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 {
 	RF12_SELECT;
 	USIDR = highbyte;
@@ -368,7 +498,8 @@ uint8_t rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 }
 #endif
 
-void rf12_reset_fifo()
+void
+rf12_reset_fifo()
 {
 	rf12_cmd(0xCA, 0x81); // clear ef bit
 	sidx = 0;
@@ -377,7 +508,8 @@ void rf12_reset_fifo()
 
 #include "rfm12b_defs.h"
 
-void rf12_setup(void)
+void
+rf12_setup(void)
 {
 	rf12_spi_init();
 
@@ -406,35 +538,44 @@ void rf12_setup(void)
 	rf12_reset_fifo();
 }
 
-void rf12_initialize(uint8_t id, uint8_t g)
+void
+rf12_initialize(uint8_t id, uint8_t g)
 {
-	nodeid = id;
+	node_id = id;
 	group = g;
 	rf12_setup();
 }
 
-void rf12_rx_on()
+void
+rf12_rx_on()
 {
 	rf12_reset_fifo();
 	sidx = 0;
 	rf12_len = 0;
-	rcv_done = 0;
+	rf12_state = RX_ON;
 #if defined(__AVR_ATmega328P__)
 	enable_interrupt(rx_interrupt);
+	if (cfg.debug)
+		printf("int0 on rx\n");
 #endif
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
 
-void rf12_rx_off()
+void
+rf12_rx_off()
 {
 #if defined(__AVR_ATmega328P__)
 	disable_interrupt();
+	if (cfg.debug)
+		printf("int0 off\n");
 #endif
+	// set idle but do not change rf12_state
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
-	receiving = 0;
 }
 
-void rf12_debug(uint8_t flag)
+void
+rf12_debug(uint8_t flag)
 {
 	cfg.debug = flag;
 }
+
