@@ -73,7 +73,7 @@ static void send_status(void)
 
 	int n = 0;
 	char s[20];
-	
+
 	if (sensor.error)
 		n = sprintf(s, "e,%02X\n", sensor.error); 
 	else
@@ -105,13 +105,13 @@ void loop(void)
 			dbgstatus |= 0x20;
 			rf12_data[rf12_len] = 0;
 			printf("    %s", rf12_data);
-			_delay_ms(300);
+			_delay_ms(2000);
 			rf12_send_sync("a\n", 2);
 		}
 		else
 		{
 			printf("    rx12_state: %d\n", st);
-			_delay_ms(300);
+			_delay_ms(2000);
 			char s[20];
 			uint8_t n = snprintf(s, 20, "n,%d\n", rf12_state);
 			rf12_send_sync(s, n);
