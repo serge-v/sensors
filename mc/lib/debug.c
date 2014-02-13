@@ -19,6 +19,7 @@ void led_dot()
 	_delay_ms(dot_len);
 }
 
+
 void led_dash()
 {
 	PORTD |= _BV(led_pin);

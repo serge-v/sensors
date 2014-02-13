@@ -6,37 +6,7 @@
 #include <rfm12b.h>
 #include <dbg_uart.h>
 #include <am2302.h>
-
-// ======== timer ==================
-unsigned long int _millis = 0;
-uint16_t _1000us = 0;
-
-// timer overflow occur every 2.048 ms
-ISR(TIM0_OVF_vect)
-{
-	_1000us += 2048;
-	while (_1000us > 10000)
-	{
-		_millis += 10;
-		_1000us -= 10000;
-	}
-}
-
-unsigned long int tick_ms(void)
-{
-	uint64_t m;
-	cli();
-	m = _millis;
-	sei();
-	return m;
-}
-
-void setup_timer(void)
-{
-	TCCR0B = (1<<CS01); // F_CPU/8 
-	TIMSK = 1 << TOIE0; // enable timer overflow interrupt
-	sei();
-}
+#include <timer.h>
 
 unsigned long last_dump = 0;
 unsigned long last_send = 0;
@@ -46,7 +16,7 @@ void setup(void)
 	dbg_uart_init();
 	printf("\n\n\n\nb");
 	rf12_initialize(10, 212);
-	setup_timer();
+	timer0_start();
 	printf("link %s %s\n", __DATE__, __TIME__);
 	rf12_send_sync("blink\n", 6);
 }
@@ -98,7 +68,7 @@ void loop(void)
 			return;
 
 		dbgstatus |= 0x40;
-		
+
 		rf12_rx_off();
 		if (st == RX_DONE_OK)
 		{
@@ -122,13 +92,13 @@ void loop(void)
 
 	}
 
-	if (tick_ms() - last_send > 10000)
+	if (timer0_ms() - last_send > 10000)
 	{
 		cli();
 		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
 		sei();
 		send_status();
-		last_send = tick_ms();
+		last_send = timer0_ms();
 	}
 }
 

@@ -59,6 +59,9 @@ rfm12b_test.elf: rfm12b.c rfm12b_test.c
 rfm12b_calc:
 	gcc rfm12b_calc.c -o rfm12b_calc.exe
 
+c1:
+	@$(CC) $(ALL_CFLAGS) -E timer.c | grep time_ms -A 100
+
 include ../lib/make/burn.mk
 
 upload: uart_test.hex

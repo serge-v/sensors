@@ -4,7 +4,7 @@
 
 #define rf12_cmd(a, b) printf("    0x%02X 0x%02X\n", a, b)
 
-int main()
+void calc_rfm12b()
 {
 	printf("rfm12b init params:\n\n");
 
@@ -40,6 +40,34 @@ int main()
 			printf("    %d  %2X  %3.2f\n", cs, R, BR);
 		}
 	}
+}
 
-	return 0;
+#define OVERFLOW_MS (1000.0 / ((float)F_CPU / (float)CLK_DIVIDER) * 256)
+#define OVERFLOW_NS ((uint16_t)(1000000.0 / ((float)F_CPU / (float)CLK_DIVIDER) * 256) % 1000)
+
+void calc_timer()
+{
+
+#define F_CPU 16000000
+#define CLK_DIVIDER 1024
+
+	uint64_t ms = OVERFLOW_MS;
+	uint64_t ns = OVERFLOW_NS;
+	printf("ms: %lu, ns: %lu\n", ms, ns);
+
+#undef F_CPU
+#undef CLK_DIVIDER
+
+#define F_CPU 1000000
+#define CLK_DIVIDER 8
+
+	ms = OVERFLOW_MS;
+	ns = OVERFLOW_NS;
+	printf("ms: %lu, ns: %lu\n", ms, ns);
+}
+
+int main()
+{
+	calc_rfm12b();
+	calc_timer();
 }

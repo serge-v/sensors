@@ -39,7 +39,6 @@ enum rf12_state
 
 void rf12_initialize(uint8_t id, uint8_t group);
 void rf12_debug(uint8_t flag);
-void rf12_send(uint8_t len);
 void rf12_rx_on(void);
 void rf12_rx_off(void);
 void rf12_send_sync(const char* s, uint8_t n);

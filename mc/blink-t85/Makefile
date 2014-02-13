@@ -12,7 +12,8 @@ SRC = \
     $(TARGET).c \
     $(LIB)/dbg_uart.c \
     $(LIB)/rfm12b.c \
-    $(LIB)/am2302.c
+    $(LIB)/am2302.c \
+    $(LIB)/timer.c
 
 ASRC = \
     $(LIB)/basic_serial.S

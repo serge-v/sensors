@@ -12,7 +12,8 @@ TARGET = tx4
 SRC = tx4.c \
     $(LIB)/rfm12b.c \
     $(LIB)/serial.c \
-    $(LIB)/debug.c
+    $(LIB)/debug.c  \
+    $(LIB)/timer.c
 
 CXXSRC = 
 
