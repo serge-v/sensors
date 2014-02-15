@@ -187,7 +187,7 @@ void loop(void)
 			printf("    %s", rf12_data);
 			rf12_state = IDLE;
 		}
-		else
+		else if (sts.debug)
 			printf("\n");
 
 		led_dot();

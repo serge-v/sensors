@@ -1,18 +1,19 @@
-MCU = atmega328p
-F_CPU = 16000000
+#MCU = atmega328p
+#F_CPU = 16000000
+MCU = attiny84
+F_CPU = 1000000
 
 PORT = /dev/ttyACM0
 
-RFM12_LIB=../lib/RFM12B
-ARDUINO = /usr/share/arduino/hardware/arduino/cores/arduino
-CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO) -I$(RFM12_LIB)
+ARDUINO = /usr/share/arduino/hardware/attiny/cores/tiny
+CINCS = -I$(ARDUINO)/../../variants/standard -I$(ARDUINO)
 
 TARGET = t85master
 
 SRC = \
     $(ARDUINO)/wiring.c \
     $(ARDUINO)/wiring_digital.c \
-    $(ARDUINO)/wiring_analog.c \
+    $(ARDUINO)/wiring_analog.c
 #    $(ARDUINO)/WInterrupts.c
 
 CXXSRC = $(TARGET).cpp \
@@ -20,7 +21,6 @@ CXXSRC = $(TARGET).cpp \
     $(ARDUINO)/HardwareSerial.cpp \
     $(ARDUINO)/Print.cpp \
 #    $(ARDUINO)/WString.cpp \
-#    $(RFM12_LIB)/RFM12B.cpp
 
 FORMAT = ihex
 UPLOAD_RATE = 115200

@@ -4,14 +4,20 @@
 
 static void uart_putchar(char c, FILE *stream)
 {
-//	TxByte(c);
+	if (c == '\n')
+		uart_putchar('\r', stream);
+	TxByte(c);
 }
 
-FILE uart_output = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
-//FILE uart_input = FDEV_SETUP_STREAM(NULL, uart_getchar, _FDEV_SETUP_READ);
+char uart_getchar(FILE *stream)
+{
+	return RxByte();
+}
+
+FILE uart_stream = FDEV_SETUP_STREAM(uart_putchar, uart_getchar, _FDEV_SETUP_RW);
 
 void dbg_uart_init()
 {
-	stdout = &uart_output;
+	stdout = stdin = &uart_stream;
 }
 
