@@ -7,6 +7,7 @@ static void uart_putchar(char c, FILE *stream)
 	if (c == '\n')
 		uart_putchar('\r', stream);
 	TxByte(c);
+
 }
 
 char uart_getchar(FILE *stream)

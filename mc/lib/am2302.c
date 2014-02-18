@@ -55,7 +55,7 @@
 #define SENSOR_is_low      !(PIN_SENSOR & (1 << SENSOR))
 
 
-uint8_t am2302(uint16_t *humidity, uint16_t *temp)
+uint8_t am2302(int16_t *humidity, int16_t *temp)
 {
 	if (SENSOR_is_low)
 	{

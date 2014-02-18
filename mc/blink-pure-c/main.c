@@ -67,8 +67,9 @@ int main (void)
 		_delay_ms(100);
 
 		PORTB &= ~_BV(PORTB2); // low
-		_delay_ms(3000);
+		_delay_ms(1000);
 		uint16_t v = sample_vcc();
+		_delay_ms(1000);
 		uint16_t t = sample_temperature();
 		printf("v:%u, t:%d\n", v, t+17);
 		cnt++;
