@@ -10,9 +10,9 @@
 #include <am2302.h>
 #include <timer.h>
 
-// #define RECEIVER_CODE
+#define DEBUG
 
-const uint8_t node_id = 11;
+const uint8_t node_id = 10;
 const uint8_t group_id = 212;
 
 unsigned long last_dump = 0;
@@ -60,10 +60,7 @@ void setup(void)
 		printf("%lu\n", timer0_ms());
 		_delay_ms(1000);
 	}
-//	char s[40];
-//	uint8_t n = snprintf(s, 40, "blink %s %s\n", __DATE__, __TIME__);
-//	rf12_send_sync(s, n);
-	rf12_send_sync("blink2\n", 6);
+	rf12_send_sync("blink\n", 6);
 	setup_watchdog(WDTO_8S);
 }
 
@@ -94,7 +91,7 @@ static void send_status(void)
 	if (sensor.error)
 		n = sprintf(s, "e,%x\n", sensor.error); 
 	else
-		n = sprintf(s, "t,%x,h,%x,d,%x\n",
+		n = sprintf(s, "t,%04X,h,%04X,d,%x\n",
 			sensor.temperature,
 			sensor.humidity,
 			dbgstatus);
@@ -158,10 +155,13 @@ void loop(void)
 	if (loop_count > 2)
 	{
 		cli();
-/*		sensor.error = 0;
+#ifdef DEBUG
+		sensor.error = 0;
 		sensor.temperature = 0x8020;
-		sensor.humidity = 30;
-*/		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
+		sensor.humidity = 312;
+#else
+		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
+#endif
 		sei();
 		send_status();
 		last_send = timer0_ms();

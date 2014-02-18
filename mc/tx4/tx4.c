@@ -158,14 +158,14 @@ print_temperature_sensor(void)
 	}
 	
 	uint16_t sensor_t = strtoul((const char*)&rf12_data[2], NULL, 16);
-	uint16_t humidity = strtoul((const char*)&rf12_data[9], NULL, 16);
+	uint16_t humidity = strtoul((const char*)&rf12_data[9], NULL, 16) / 10;
 	
 	int8_t temperature = (sensor_t & 0x7FFF) / 10;
 	if (sensor_t & 0x8000)
 		temperature = -temperature;
 	
-	int8_t temperatureF = temperature * 5 / 9.0 + 32;
-	
+	int8_t temperatureF = (float)temperature * 9.0 / 5.0 + 32;
+
 	printf("%d  %dC %dF RH %d%%\n", rf12_node, temperature, temperatureF, humidity);
 }
 

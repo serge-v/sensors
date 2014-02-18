@@ -146,7 +146,7 @@ rx_interrupt(void)
 
 	uint8_t c = rf12_cmd(0xB0, 0x00);
 	if (c == 0)
-		return;
+		return; // TODO: investigate this stupid case which skips zeroes
 
 	rf12_rx_buf[sidx++] = c;
 
