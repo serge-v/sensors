@@ -3,11 +3,12 @@
 #include <util/delay.h>
 #include <rfm12b.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <debug.h>
 #include <timer.h>
 #include "serial.h"
 
-#define node_id     10       //node ID of tx (range 0-30)
+#define node_id     9        //node ID of tx (range 0-30)
 #define network     212      //network group (can be in the range 1-250).
 
 FILE serial_stream = FDEV_SETUP_STREAM(serial_putchar, serial_getchar, _FDEV_SETUP_RW);
@@ -146,7 +147,30 @@ static void handle_serial(void)
 	}
 }
 
-void loop(void)
+static void
+print_temperature_sensor(void)
+{
+	if (rf12_data[0] != 't' || rf12_data[1] != ',' ||
+		rf12_data[7] != 'h' || rf12_data[8] != ',')
+	{
+		printf("%d  badrec: %s\n", rf12_node, rf12_data);
+		return;
+	}
+	
+	uint16_t sensor_t = strtoul((const char*)&rf12_data[2], NULL, 16);
+	uint16_t humidity = strtoul((const char*)&rf12_data[9], NULL, 16);
+	
+	int8_t temperature = (sensor_t & 0x7FFF) / 10;
+	if (sensor_t & 0x8000)
+		temperature = -temperature;
+	
+	int8_t temperatureF = temperature * 5 / 9.0 + 32;
+	
+	printf("%d  %dC %dF RH %d%%\n", rf12_node, temperature, temperatureF, humidity);
+}
+
+void
+loop(void)
 {
 	if (serial_available())
 		handle_serial();
@@ -180,11 +204,15 @@ void loop(void)
 	if (rf12_state >= RX_DONE_OK)
 	{
 		if (sts.debug)
-			printf("    rx_state: %d, len: %d", rf12_state, rf12_len);
+			printf("%d  rx_state: %d, len: %d\n", rf12_node, rf12_state, rf12_len);
 		if (rf12_state == RX_DONE_OK)
 		{
 			rf12_data[rf12_len] = 0;
-			printf("    %s", rf12_data);
+			if (rf12_node >= 10 && rf12_node < 20)
+				print_temperature_sensor();
+			else
+				printf("%d  %s", rf12_node, rf12_data);
+			
 			rf12_state = IDLE;
 		}
 		else if (sts.debug)

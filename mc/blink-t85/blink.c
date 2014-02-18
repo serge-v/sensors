@@ -12,7 +12,7 @@
 
 // #define RECEIVER_CODE
 
-const uint8_t node_id = 10;
+const uint8_t node_id = 11;
 const uint8_t group_id = 212;
 
 unsigned long last_dump = 0;
@@ -24,23 +24,26 @@ void system_sleep(void);
 // 6=1 sec,7=2 sec, 8=4 sec, 9= 8sec
 void setup_watchdog(int ii)
 {
-	uint8_t bb;
-	int ww;
+	uint8_t tout;
 	if (ii > 9)
 		ii = 9;
-	bb = ii & 7;
+	tout = ii & 7;
 	if (ii > 7)
-		bb |= (1<<5);
+		tout |= _BV(WDP3);
 
-	bb |= (1<<WDCE);
-	ww = bb;
+	tout |= _BV(WDCE);
 
-	MCUSR &= ~(1<<WDRF);
-	// start timed sequence````
-	WDTCR |= (1<<WDCE) | (1<<WDE);
-	// set new watchdog timeout value
-	WDTCR = bb;
+	MCUSR &= ~_BV(WDRF);
+
+#if defined(WDTCR)
+	WDTCR |= _BV(WDCE) | _BV(WDE);
+	WDTCR = tout;
 	WDTCR |= _BV(WDIE);
+#elif defined (WDTSCR)
+	WDTCR |= _BV(WDCE) | _BV(WDE);
+	WDTCR = tout;
+	WDTCR |= _BV(WDIE);
+#endif
 }
 
 
@@ -60,14 +63,14 @@ void setup(void)
 //	char s[40];
 //	uint8_t n = snprintf(s, 40, "blink %s %s\n", __DATE__, __TIME__);
 //	rf12_send_sync(s, n);
-	rf12_send_sync("blink\n", 6);
+	rf12_send_sync("blink2\n", 6);
 	setup_watchdog(WDTO_8S);
 }
 
 struct rht03_status
 {
-	int16_t humidity;
-	int16_t temperature;
+	uint16_t humidity;
+	uint16_t temperature;
 	uint8_t error;
 };
 
@@ -89,13 +92,11 @@ static void send_status(void)
 	char s[20];
 
 	if (sensor.error)
-		n = sprintf(s, "e,%02X\n", sensor.error); 
+		n = sprintf(s, "e,%x\n", sensor.error); 
 	else
-		n = sprintf(s, "t,%d.%1d,h,%d.%1d,d,%02X\n",
-			sensor.temperature / 10,
-			sensor.temperature % 10,
-			sensor.humidity / 10,
-			sensor.humidity % 10,
+		n = sprintf(s, "t,%x,h,%x,d,%x\n",
+			sensor.temperature,
+			sensor.humidity,
 			dbgstatus);
 
 	dbgstatus = 0;
@@ -157,7 +158,10 @@ void loop(void)
 	if (loop_count > 2)
 	{
 		cli();
-		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
+/*		sensor.error = 0;
+		sensor.temperature = 0x8020;
+		sensor.humidity = 30;
+*/		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
 		sei();
 		send_status();
 		last_send = timer0_ms();

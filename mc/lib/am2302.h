@@ -25,7 +25,7 @@
 #define SENSOR       PB3
 
 
-uint8_t am2302(int16_t *humidity, int16_t *temp);
+uint8_t am2302(uint16_t *humidity, uint16_t *temp);
 
 
 

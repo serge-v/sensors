@@ -12,8 +12,17 @@
 #define UART_Port (PORTB-0x20)
 ;#define UART_Tx 0
 ;#define UART_Rx 1
+
+#if defined(__AVR_ATtiny85__)
 #define UART_Tx 3
 #define UART_Rx 3
+#pragma message("3,3")
+#elif defined(__AVR_ATtiny84__)
+#define UART_Tx 3
+#define UART_Rx 3
+#else
+#error pins are not defined for this MCU
+#endif
 
 ; Supports using only one pin on the AVR for both Tx and Rx
 ;              D1

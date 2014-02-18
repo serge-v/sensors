@@ -20,10 +20,12 @@ static uint8_t group;
 // [5]..[len-3]   : data -- rf12_data
 // [len-2][len-1] : crc
 
-uint8_t rf12_packet[30];
+#define BUF_SIZE 100
+uint8_t rf12_packet[BUF_SIZE];
 uint8_t* rf12_rx_buf = &rf12_packet[3]; // 3 preambe bytes are consumed by hardware
 uint8_t* rf12_data = &rf12_packet[5];
 
+uint8_t                   rf12_node = 0;
 volatile uint8_t          rf12_len = 0;
 volatile uint8_t          sidx = 0;
 volatile enum rf12_state  rf12_state = IDLE;
@@ -69,7 +71,12 @@ verify_data(void)
 	expected_crc |= rf12_rx_buf[i] << 8;
 
 	if (expected_crc != crc && cfg.debug)
-		printf(" ex: %4X, calc: %4X\n", expected_crc, crc);
+	{
+		printf("%d  crc: %4X, calc: %4X, len: %d\n", rf12_node, expected_crc, crc, rf12_len);
+		for (int i = 0; i < rf12_len+4; i++)
+			printf("%02X ", rf12_rx_buf[i]);
+		printf("\n");
+	}
 
 	return (expected_crc == crc);
 }
@@ -138,12 +145,19 @@ rx_interrupt(void)
 	}
 
 	uint8_t c = rf12_cmd(0xB0, 0x00);
+	if (c == 0)
+		return;
+
 	rf12_rx_buf[sidx++] = c;
 
-	if (sidx == 2)
+	if (sidx == 1)
+	{
+		rf12_node = c;
+	}
+	else if (sidx == 2)
 	{
 		rf12_len = c;
-		if (rf12_len == 0 || rf12_len > 20)
+		if (rf12_len == 0 || rf12_len >= BUF_SIZE)
 		{
 			rf12_len = 0;
 			rf12_state = RX_DONE_OVERFLOW;
@@ -155,7 +169,9 @@ rx_interrupt(void)
 	if (sidx == rf12_len + 4)
 	{
 		if (verify_data())
+		{
 			rf12_state = RX_DONE_OK;
+		}
 		else
 			rf12_state = RX_DONE_BADCRC;
 		rf12_rx_off();
@@ -346,10 +362,10 @@ uint8_t rf12_read_rx(void)
 	if (sidx == 2)
 		rf12_len = c;
 
-	if (rf12_len >= 20)
+	if (rf12_len >= BUF_SIZE)
 	{
 		rf12_state = RX_DONE_OVERFLOW;
-		rf12_len = 20;
+		rf12_len = BUF_SIZE;
 	}
 
 	if (sidx == rf12_len + 4)
@@ -400,11 +416,12 @@ rf12_send_sync(const char*s, uint8_t n)
 	rf12_reset_fifo();
 
 	start_tx();
-
+	tx(0xAA);        // preamble
+	tx(0xAA);        // preamble
 	tx(0xAA);        // preamble
 	tx(0x2D);        // sync hi byte
-	tx(0xD4);        // sync low byte
-	tx(0x0A);        // id
+	tx(group);       // sync low byte
+	tx(node_id);     // id
 	tx(n);           // len
 	
 	for (uint8_t i = 0; i < n; i++)
@@ -412,7 +429,7 @@ rf12_send_sync(const char*s, uint8_t n)
 	
 	tx(crc & 0xFF);  // crc lo
 	tx(crc >> 8);    // crc hi
-	tx(0);           // dummy byte
+//	tx(0);           // dummy byte
 	tx(0);           // dummy byte
 	while (!rf12_read_status_MSB()); // wait dummy byte to complete
 	_delay_ms(50); // not sure if this is required
@@ -552,11 +569,10 @@ rf12_rx_on()
 	rf12_reset_fifo();
 	sidx = 0;
 	rf12_len = 0;
+	rf12_node = 0;
 	rf12_state = RX_ON;
 #if defined(__AVR_ATmega328P__)
 	enable_interrupt(rx_interrupt);
-	if (cfg.debug)
-		printf("int0 on rx\n");
 #endif
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
@@ -566,8 +582,6 @@ rf12_rx_off()
 {
 #if defined(__AVR_ATmega328P__)
 	disable_interrupt();
-	if (cfg.debug)
-		printf("int0 off\n");
 #endif
 	// set idle but do not change rf12_state
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
