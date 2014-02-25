@@ -237,10 +237,11 @@ int main(int argc, char **argv, char **envp)
 
 	gpio_export(gpio);
 	gpio_set_dir(gpio, 0);
-	gpio_set_edge(gpio, "rising");
+	gpio_set_edge(gpio, "falling");
 	gpio_fd = gpio_fd_open(gpio);
 
 	timeout = POLL_TIMEOUT;
+	int count = 0;
 
 	while (1) {
 		memset((void*)fdset, 0, sizeof(fdset));
@@ -264,7 +265,10 @@ int main(int argc, char **argv, char **envp)
 
 		if (fdset[1].revents & POLLPRI) {
 			len = read(fdset[1].fd, buf, MAX_BUF);
-			printf("\npoll() GPIO %d interrupt occurred\n", gpio);
+			unsigned int val = 2;
+			int rc = gpio_get_value(gpio, &val);
+			printf("\n%d GPIO %d, len: %d, rc: %d, val: %u\n",
+				count++, gpio, len, rc, val);
 		}
 
 		if (fdset[0].revents & POLLIN) {
