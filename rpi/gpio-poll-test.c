@@ -110,6 +110,31 @@ int gpio_set_dir(unsigned int gpio, unsigned int out_flag)
 }
 
 /****************************************************************
+ * gpio_set_active_low
+ ****************************************************************/
+int gpio_set_active_low(unsigned int gpio, unsigned int alow_flag)
+{
+	int fd, len;
+	char buf[MAX_BUF];
+
+	len = snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR  "/gpio%d/active_low", gpio);
+
+	fd = open(buf, O_WRONLY);
+	if (fd < 0) {
+		perror("gpio/active_low");
+		return fd;
+	}
+
+	if (alow_flag)
+		write(fd, "1", 1);
+	else
+		write(fd, "0", 1);
+
+	close(fd);
+	return 0;
+}
+
+/****************************************************************
  * gpio_set_value
  ****************************************************************/
 int gpio_set_value(unsigned int gpio, unsigned int value)
@@ -238,6 +263,7 @@ int main(int argc, char **argv, char **envp)
 	gpio_export(gpio);
 	gpio_set_dir(gpio, 0);
 	gpio_set_edge(gpio, "falling");
+	gpio_set_active_low(gpio, 1);
 	gpio_fd = gpio_fd_open(gpio);
 
 	timeout = POLL_TIMEOUT;

@@ -1,10 +1,8 @@
-echo "22" > /sys/class/gpio/export
+PIN=${1-27}
 
-#echo "in" > /sys/class/gpio/gpio22/direction
-echo "out" > /sys/class/gpio/gpio22/direction
-
-echo "1" > /sys/class/gpio/gpio22/value
+echo "${PIN}" > /sys/class/gpio/export
+echo "out" > /sys/class/gpio/gpio${PIN}/direction
+echo "1" > /sys/class/gpio/gpio${PIN}/value
 sleep 1
-echo "0" > /sys/class/gpio/gpio22/value
-
-#echo "22" > /sys/class/gpio/unexport
+echo "0" > /sys/class/gpio/gpio${PIN}/value
+echo "${PIN}" > /sys/class/gpio/unexport
