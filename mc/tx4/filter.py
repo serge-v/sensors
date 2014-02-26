@@ -9,5 +9,10 @@ while 1:
 		
 	now = time.localtime(time.time())
 
-	print time.strftime('\x1b[33m%H:%M:%S\x1b[0m', now), s.rstrip()
+	s = s.rstrip()
+	
+	if s.startswith('11  ') and s.endswith('%'):
+		s = '\x1b[32m' + s + '\x1b[0m'
+	
+	print time.strftime('\x1b[33m%H:%M:%S\x1b[0m', now), s
 
