@@ -91,8 +91,8 @@ int wait_packet(int irq_fd)
 	FD_ZERO(&rfds);
 	FD_SET(irq_fd, &rfds);
 
-	tv.tv_sec = 5;
-	tv.tv_usec = 0;
+	tv.tv_sec = 0;
+	tv.tv_usec = 50000;
 
 	retval = select(1, &rfds, NULL, NULL, &tv);
 
@@ -118,21 +118,21 @@ void loop()
 	unsigned char buffer[128];
 	uint8_t i;
 	int j;
-	
-	int irq_fd = open_irq_pin();
+
+/*	int irq_fd = open_irq_pin();
 	if (irq_fd < 0)
 	{
 		perror("cannot open irq pin");
 		exit(1);
 	}
-
+*/
 	rf12_xfer(0x82dd);
 
-	for(j = 0; j<20; j++)
+	for(j = 0; j<1000; j++)
 	{
 		rf12_xfer(0xCA80); //reset the sync cicuit to look for a new packet
 		rf12_xfer(0xCA83);
-		
+/*
 		rf12_xfer(0);
 
 		int rc = wait_packet(irq_fd);
@@ -141,17 +141,17 @@ void loop()
 			perror("irq fd select");
 			exit(1);
 		}
-		
+
 		if (rc == 0)
 		{
-			printf(".");
+			printf("%d", bcm2835_gpio_lev(RFM_IRQ));
 			fflush(stdout);
 			continue;
 		}
+*/
+		rf12_xfer(0);
 
-//		rf12_xfer(0);
-
-//		while(bcm2835_gpio_lev(RFM_IRQ));
+		while(bcm2835_gpio_lev(RFM_IRQ));
 		rf12_xfer(0);
 		uint8_t id = rf12_xfer(0xB000);
 
@@ -206,4 +206,3 @@ int main (void)
 	printf("Done\n");
 	return 0 ;
 }
-
