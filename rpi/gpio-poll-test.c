@@ -40,7 +40,7 @@
  ****************************************************************/
 
 #define SYSFS_GPIO_DIR "/sys/class/gpio"
-#define POLL_TIMEOUT (3 * 1000) /* 3 seconds */
+#define POLL_TIMEOUT (1 * 1000) /* 3 seconds */
 #define MAX_BUF 64
 
 /****************************************************************
@@ -276,7 +276,7 @@ int main(int argc, char **argv, char **envp)
 		fdset[0].events = POLLIN;
 
 		fdset[1].fd = gpio_fd;
-		fdset[1].events = POLLPRI;
+		fdset[1].events = POLLPRI | POLLERR;
 
 		rc = poll(fdset, nfds, timeout);
 
@@ -286,10 +286,13 @@ int main(int argc, char **argv, char **envp)
 		}
 
 		if (rc == 0) {
-			printf(".");
+			unsigned int val = 2;
+			int rc = gpio_get_value(gpio, &val);
+			printf("%d,%d ", rc, val);
 		}
 
-		if (fdset[1].revents & POLLPRI) {
+		if (fdset[1].revents & (POLLPRI | POLLERR)) {
+			lseek(gpio_fd, 0, SEEK_SET);
 			len = read(fdset[1].fd, buf, MAX_BUF);
 			unsigned int val = 2;
 			int rc = gpio_get_value(gpio, &val);

@@ -7,7 +7,7 @@
 static uint8_t group = 212;         // network group
 volatile uint16_t rf12_crc;         // running crc value
 
-#define RFM_IRQ 22			//IRQ GPIO pin.
+#define RFM_IRQ 22              //IRQ GPIO pin.
 #define RFM_CE BCM2835_SPI_CS1  //SPI chip select
 
 void spi_init()
@@ -48,7 +48,7 @@ uint16_t rf12_xfer(uint16_t cmd)
 	uint16_t reply;
 	buffer[0] = cmd >> 8;
 	buffer[1] = cmd;
-	bcm2835_spi_transfern(buffer, 2);
+	bcm2835_spi_transfern((char*)buffer, 2);
 	reply = buffer[0] << 8;
 	reply |= buffer[1];
 	return reply;
@@ -59,7 +59,7 @@ void rf12_cmd(uint8_t cmd, uint8_t d)
 	unsigned char buffer[2];
 	buffer[0] = cmd;
 	buffer[1] = d;
-	bcm2835_spi_transfern(buffer, 2);
+	bcm2835_spi_transfern((char*)buffer, 2);
 }
 
 void rf12_init()
@@ -91,10 +91,10 @@ int wait_packet(int irq_fd)
 	FD_ZERO(&rfds);
 	FD_SET(irq_fd, &rfds);
 
-	tv.tv_sec = 0;
-	tv.tv_usec = 50000;
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
 
-	retval = select(1, &rfds, NULL, NULL, &tv);
+	retval = select(1, NULL, NULL, &rfds, &tv);
 
 	if (retval == -1)
 		return -1;
@@ -119,20 +119,20 @@ void loop()
 	uint8_t i;
 	int j;
 
-/*	int irq_fd = open_irq_pin();
+	int irq_fd = open_irq_pin();
 	if (irq_fd < 0)
 	{
 		perror("cannot open irq pin");
 		exit(1);
 	}
-*/
+
 	rf12_xfer(0x82dd);
 
 	for(j = 0; j<1000; j++)
 	{
 		rf12_xfer(0xCA80); //reset the sync cicuit to look for a new packet
 		rf12_xfer(0xCA83);
-/*
+
 		rf12_xfer(0);
 
 		int rc = wait_packet(irq_fd);
@@ -148,7 +148,7 @@ void loop()
 			fflush(stdout);
 			continue;
 		}
-*/
+
 		rf12_xfer(0);
 
 		while(bcm2835_gpio_lev(RFM_IRQ));
