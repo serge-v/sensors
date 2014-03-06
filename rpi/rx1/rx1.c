@@ -1,16 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
+#include <time.h>
 #include <fcntl.h>
 #include <bcm2835.h>
 #include "../../mc/lib/rfm12b_defs.h"
 
 static uint8_t group = 212;         // network group
-volatile uint16_t rf12_crc;         // running crc value
 
 #define RFM_IRQ 22              //IRQ GPIO pin.
 #define RFM_CE BCM2835_SPI_CS1  //SPI chip select
+#define MAX_SENSORS 20
 
-void spi_init()
+uint8_t sensors_read[MAX_SENSORS];
+
+static void
+spi_init()
 {
 	if (!bcm2835_init())
 		exit (1);
@@ -26,7 +31,8 @@ void spi_init()
 	bcm2835_gpio_set_pud(RFM_IRQ, BCM2835_GPIO_PUD_UP);
 }
 
-static uint16_t _crc16_update(uint16_t crc, uint8_t a)
+static uint16_t
+_crc16_update(uint16_t crc, uint8_t a)
 {
 	int i;
 
@@ -42,7 +48,8 @@ static uint16_t _crc16_update(uint16_t crc, uint8_t a)
 	return crc;
 }
 
-uint16_t rf12_xfer(uint16_t cmd)
+static uint16_t
+rf12_xfer(uint16_t cmd)
 {
 	unsigned char buffer[2];
 	uint16_t reply;
@@ -54,7 +61,8 @@ uint16_t rf12_xfer(uint16_t cmd)
 	return reply;
 }
 
-void rf12_cmd(uint8_t cmd, uint8_t d)
+static void
+rf12_cmd(uint8_t cmd, uint8_t d)
 {
 	unsigned char buffer[2];
 	buffer[0] = cmd;
@@ -62,7 +70,8 @@ void rf12_cmd(uint8_t cmd, uint8_t d)
 	bcm2835_spi_transfern((char*)buffer, 2);
 }
 
-void rf12_init()
+static void
+rf12_init()
 {
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EB | RF_PWR_DC);
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);
@@ -82,72 +91,32 @@ void rf12_init()
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
 
-int wait_packet(int irq_fd)
+static int
+all_read()
 {
-	fd_set rfds;
-	struct timeval tv;
-	int retval;
-
-	FD_ZERO(&rfds);
-	FD_SET(irq_fd, &rfds);
-
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
-
-	retval = select(1, NULL, NULL, &rfds, &tv);
-
-	if (retval == -1)
-		return -1;
-	else if (retval)
-		return 1;
-	return 0;
+	uint8_t i;
+	for (i = 0; i < MAX_SENSORS; i++)
+	{
+		if (sensors_read[i] > 0)
+			return 0;
+	}
+	
+	return 1;
 }
 
-int open_irq_pin()
-{
-	char s[100];
-	snprintf(s, 100, "/sys/class/gpio/gpio%d/value", RFM_IRQ);
-	int fd = open(s, O_RDONLY);
-	if (fd < 0)
-		return -1;
-	return fd;
-}
-
-void loop()
+static void
+loop()
 {
 	unsigned char buffer[128];
 	uint8_t i;
 	int j;
 
-	int irq_fd = open_irq_pin();
-	if (irq_fd < 0)
-	{
-		perror("cannot open irq pin");
-		exit(1);
-	}
-
 	rf12_xfer(0x82dd);
 
-	for(j = 0; j<1000; j++)
+	for(j = 0; j < 10; j++)
 	{
 		rf12_xfer(0xCA80); //reset the sync cicuit to look for a new packet
 		rf12_xfer(0xCA83);
-
-		rf12_xfer(0);
-
-		int rc = wait_packet(irq_fd);
-		if (rc == -1)
-		{
-			perror("irq fd select");
-			exit(1);
-		}
-
-		if (rc == 0)
-		{
-			printf("%d", bcm2835_gpio_lev(RFM_IRQ));
-			fflush(stdout);
-			continue;
-		}
 
 		rf12_xfer(0);
 
@@ -171,8 +140,13 @@ void loop()
 			while (buffer[i] == 0);
 		}
 
-		printf("%d  len: %d  ", id, len);
+//		printf("%d  len: %d  ", id, len);
 		
+		uint16_t rf12_crc = 0, sent_crc = 0;
+
+		sent_crc = buffer[len + 1] << 8;
+		sent_crc |= buffer[len];
+
 		rf12_crc = ~0;
 		rf12_crc = _crc16_update(rf12_crc, group);
 		rf12_crc = _crc16_update(rf12_crc, id);
@@ -181,28 +155,75 @@ void loop()
 		for (i = 0; i < len; i++)
 			rf12_crc = _crc16_update(rf12_crc, buffer[i]);
 
-		for (i = 0; i < len + 2; i++)
+		if (sent_crc == rf12_crc)
 		{
-			printf(" %02X", buffer[i]);
-			buffer[i] = 0;
-		}
+			buffer[len] = 0;
+			// printf("%s", buffer);
+			
+			unsigned int tmr = 100;
+			unsigned int hum = 0;
+			
+			int n = sscanf((char*)buffer, "t,%04X,h,%04X,d", &tmr, &hum);
+			if (n != 2)
+				continue;
+			
+			int temperature = (tmr & 0x7FF) / 10;
+			
+			if (tmr & 0x8000)
+				temperature = -temperature;
 
-		printf(" (crc = %04X)", rf12_crc);
-		printf("\n");
+			int humidity = hum / 10;
+			int temperatureF = (float)temperature * 9.0 / 5.0 + 32;
+
+			if (0)
+			{
+				printf("%d  %dC %dF RH %d%%\n", id, temperature, temperatureF, humidity);
+			}
+			else
+			{
+				char time_str[50];
+				struct tm tm;
+				time_t now = time(NULL);
+				gmtime_r(&now, &tm);
+				strftime(time_str, 50, "%Y-%m-%dT%H:%M:%SZ", &tm);
+				printf("%d,%s,%d\n", id, time_str, temperature);
+			}
+
+			sensors_read[id] = 0;
+			if (all_read())
+				return;
+		}
+/*		else
+		{
+			for (i = 0; i < len + 2; i++)
+				printf(" %02X", buffer[i]);
+			printf(" (crc = %04X, sent_crc = %04X)", rf12_crc, sent_crc);
+			printf("\n");
+		}
+*/
+		memset(buffer, 0, len + 2);
 	}
+}
+
+static void
+init()
+{
+	memset(sensors_read, 0, MAX_SENSORS);
+	sensors_read[10] = 1;
+	sensors_read[11] = 1;
 }
 
 int main (void)
 {
-	printf ("Raspberry Pi RFM12B test program\n") ;
+	// printf("Read sensors\n") ;
 
 	spi_init();
 	rf12_init();
+	init();
 
 	loop();
 
 	bcm2835_spi_end();
 
-	printf("Done\n");
 	return 0 ;
 }
