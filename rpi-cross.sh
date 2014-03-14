@@ -16,4 +16,10 @@ cd ~/src/xtree/linux
 make mrproper
 wget -O .config https://raw.github.com/raspberrypi/linux/rpi-3.10.y/arch/arm/configs/bcmrpi_defconfig
 make ARCH=arm CROSS_COMPILE=${CCPREFIX} menuconfig
+make ARCH=arm CROSS_COMPILE=${CCPREFIX} -j3
 
+
+wget https://raw.github.com/raspberrypi/firmware/a62796faed221155fe1dc6f247add8922445b004/extra/Module.symvers
+
+
+scp rfm12b.ko pi@192.168.1.9:

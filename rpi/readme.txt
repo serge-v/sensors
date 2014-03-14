@@ -28,3 +28,92 @@ Raspberry PI and RFM12BS on breadboard
 
 
 
+Raspberry pi recovery steps
+==========================
+
+Make sure that SD device is on /dev/sdd
+
+	ls -l /dev/disk/by-id | grep _SD_MMC
+
+Copy image
+
+	sudo dd bs=4M if=20140301-2-resized.img of=/dev/sdd
+
+Fix HDMI blank screen. Change config.txt to:
+
+	disable_overscan=0
+	hdmi_force_hotplug=1
+	hdmi_group=1
+	hdmi_mode=16 # 1920x1080
+
+
+Raspberry pi install steps without keyboard and HDMI monitor
+============================================================
+
+Make sure that SD device is on /dev/sdd
+
+	ls -l /dev/disk/by-id | grep _SD_MMC
+
+Copy image
+
+	sudo dd bs=4M if=image.img of=/dev/sdd
+
+Connect RS-232 cable
+--------------------
+
+    ............. |
+    ........GWB.R |
+    ---------------+
+    Green - TX
+    White - RX
+    Black - 0
+    Red   - +5V (optional)
+
+After boot
+----------
+
+Change password:
+
+    passwd
+
+Enable wireless networking:
+
+    sudo nano /etc/network/interfaces
+
+Change following lines:
+
+    wireless-essid  NAME
+    wireless-key PASSWORD
+
+Save file (Ctrl+X, Y) and then reboot:
+
+    sudo reboot
+
+Install mc and scripts:
+
+    sudo apt-get update
+    sudo apt-get install mc
+    git clone https://github.com/serge-v/homedir.git
+
+Manually copy homedir to $HOME
+
+Upgrade:
+
+    sudo apt-get update
+    sudo apt-get upgrade
+
+Start configuration:
+
+    sudo raspi-config
+    sudo dpkg-reconfigure console-setup
+
+Autologin:
+
+Open:
+
+    sudo nano /etc/inittab
+
+Change respawn for tty1:
+
+    1:2345:respawn:/bin/login -f pi tty1 </dev/tty1 >/dev/tty1 2>&1
+
