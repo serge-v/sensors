@@ -16,6 +16,5 @@ Receiver
 
 rpi/rx1
 
-Based on Raspberry PI and RFM12B transiever. Receives sensors data and uploads to xively account.
-
-
+Based on Raspberry PI and RFM12B tranceiver.
+Receives sensors data and uploads it to the xively account.

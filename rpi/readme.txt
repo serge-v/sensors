@@ -27,15 +27,20 @@ Raspberry PI and RFM12BS on breadboard
 
 
 
+Raspberry pi backup steps
+==========================
+
+	sudo dd bs=4M if=/dev/sdd of=`date +%Y%m%dT%H%M`-cam1.img
+
 
 Raspberry pi recovery steps
-==========================
+===========================
 
 Make sure that SD device is on /dev/sdd
 
 	ls -l /dev/disk/by-id | grep _SD_MMC
 
-Copy image
+Copy image to the sd card
 
 	sudo dd bs=4M if=20140301-2-resized.img of=/dev/sdd
 
@@ -58,6 +63,26 @@ Copy image
 
 	sudo dd bs=4M if=image.img of=/dev/sdd
 
+Mount image
+	mount-cam1-sd.sh
+
+Edit network config
+
+	cd /mnt/cam1-sd/p2/etc/network
+	sudo nano interfaces
+
+Put text
+	
+	auto wlan0
+	iface wlan0 inet dhcp
+        wireless-essid [ESSID]
+        wireless-mode [MODE] 
+
+Umount image
+	
+	sudo umount /mnt/cam1-sd/p1
+	sudo umount /mnt/cam1-sd/p2
+
 Connect RS-232 cable
 --------------------
 
@@ -76,7 +101,7 @@ Change password:
 
     passwd
 
-Enable wireless networking:
+Enable wireless networking (if not done before):
 
     sudo nano /etc/network/interfaces
 
