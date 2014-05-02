@@ -1,5 +1,7 @@
+DIR=`dirname "$0"`
+
 xterm-title.sh ttyUSB0
-set-usb0-19200.sh
+${DIR}/set-usb0-19200.sh
 
 while [[ 1 ]] ; do
 	date +'===== %Y-%m-%d-%H:%M:%S =======' | tee -a ttyUSB0.log
