@@ -1,5 +1,7 @@
 #!/usr/bin/python -u
 
+# colorize timer with id=11
+
 import sys, time
 
 while 1:
