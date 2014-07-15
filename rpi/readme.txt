@@ -1,3 +1,9 @@
+Install Archlinux
+=================
+wget http://archlinuxarm.org/os/ArchLinuxARM-rpi-latest.zip
+unzip ArchLinuxARM-rpi-latest.zip
+
+
 Raspberry PI and RFM12BS on breadboard
 ======================================
 
