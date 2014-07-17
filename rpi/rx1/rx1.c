@@ -187,6 +187,7 @@ loop()
 				gmtime_r(&now, &tm);
 				strftime(time_str, 50, "%Y-%m-%dT%H:%M:%SZ", &tm);
 				printf("%d,%s,%d\n", id, time_str, temperature);
+				printf("%d,%s,%d\n", 12, time_str, humidity);
 			}
 
 			sensors_read[id] = 0;
@@ -209,7 +210,7 @@ static void
 init()
 {
 	memset(sensors_read, 0, MAX_SENSORS);
-	sensors_read[10] = 1;
+//	sensors_read[10] = 1;
 	sensors_read[11] = 1;
 }
 

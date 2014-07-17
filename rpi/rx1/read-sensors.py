@@ -1,8 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import httplib, os
 
-f = os.popen('/home/pi/src/sensors/rpi/rx1/rx1')
+f = os.popen('/home/noro/src/xtree/sensors/rpi/rx1/rx1')
 body = f.read()
 f.close()
 
