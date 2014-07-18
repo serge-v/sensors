@@ -101,3 +101,23 @@ _crc16_update(uint16_t crc, uint8_t a)
 	return crc;
 }
 
+void
+calc_crc(uint8_t group, uint8_t id, uint8_t len, uint8_t* b)
+{
+	uint16_t crc = ~0;
+	crc = _crc16_update(crc, group);
+	crc = _crc16_update(crc, id);
+	crc = _crc16_update(crc, len);
+
+	for (i = 0; i < len; i++)
+		crc = _crc16_update(crc, b[i]);
+
+	return crc;
+}
+
+uint8_t trx_recv()
+{
+	while(bcm2835_gpio_lev(RFM_IRQ));
+	rf12_cmd(0, 0);
+	return rf12_xfer(0xB000);
+}

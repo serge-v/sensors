@@ -26,19 +26,6 @@ all_read()
 	return 1;
 }
 
-static void calc_crc(group, id, len, uint8_t* b)
-{
-	uint16_t crc = ~0;
-	crc = _crc16_update(crc, group);
-	crc = _crc16_update(crc, id);
-	crc = _crc16_update(crc, len);
-
-	for (i = 0; i < len; i++)
-		crc = _crc16_update(crc, b[i]);
-
-	return crc;
-}
-
 static void
 loop()
 {
@@ -52,22 +39,14 @@ loop()
 	{
 		trx_reset();
 
-		while(bcm2835_gpio_lev(RFM_IRQ));
-		rf12_cmd(0, 0);
-		uint8_t id = rf12_xfer(0xB000);
-
-		while(bcm2835_gpio_lev(RFM_IRQ));
-		rf12_cmd(0, 0);
-		uint8_t len = rf12_xfer(0xB000);
+		uint8_t id = trx_recv();
+		uint8_t len = trx_recv();
 
 		for(i = 0; i < len + 2; i++)
 		{
 			do
 			{
-				while(bcm2835_gpio_lev(RFM_IRQ));
-
-				rf12_cmd(0, 0);
-				buffer[i] = rf12_xfer(0xB000);
+				buffer[i] = trx_recv();
 			}
 			while (buffer[i] == 0);
 		}
