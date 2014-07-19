@@ -26,6 +26,8 @@ void calc_rfm12b()
 	rf12_cmd(RF_BATT_CFG, 0x00); // 1MHz,2.2V
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+	
+	printf("%04X\n", (RF_PWR_MGMT << 8) | RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 
 	printf("\nRF_DRATE_CFG(0x%02X) values:\n\n", RF_DRATE_CFG);
 	printf("    CS  R  Speed, Kbps\n");

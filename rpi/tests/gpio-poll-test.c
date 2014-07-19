@@ -302,7 +302,7 @@ int main(int argc, char **argv, char **envp)
 
 		if (fdset[0].revents & POLLIN) {
 			(void)read(fdset[0].fd, buf, 1);
-			printf("\npoll() stdin read 0x%2.2X\n", (unsigned int) buf[0]);
+			printf("\npoll() stdin read 0x%2.2X\n", (unsigned int)buf[0]);
 		}
 
 		fflush(stdout);

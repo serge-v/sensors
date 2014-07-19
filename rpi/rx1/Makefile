@@ -1,15 +1,15 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -I/usr/local/include
 CFLAGSNOLINK=$(CFLAGS) -c 
 LIBS= -lrt -lbcm2835
-INC= -I/usr/local/include -I.
 
-all: rx1
+all: rx1 rx2
 
 rx1: rx1.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
+	$(CC) -o $@ $^ $(LIBS) 
 
-rx1.o: rx1.c
-	$(CC) $(CFLAGSNOLINK) $(LIBS) -Wall $<
+rx2: rx2.o trx.o
+	$(CC) -o $@ $^ $(LIBS) 
 
-
+clean:
+	rx1 rx2 *.o
