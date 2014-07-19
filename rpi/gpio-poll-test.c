@@ -263,7 +263,7 @@ int main(int argc, char **argv, char **envp)
 	gpio_export(gpio);
 	gpio_set_dir(gpio, 0);
 	gpio_set_edge(gpio, "falling");
-	gpio_set_active_low(gpio, 1);
+	gpio_set_active_low(gpio, 0);
 	gpio_fd = gpio_fd_open(gpio);
 
 	timeout = POLL_TIMEOUT;
