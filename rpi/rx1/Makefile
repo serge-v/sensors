@@ -12,4 +12,4 @@ rx2: rx2.o trx.o
 	$(CC) -o $@ $^ $(LIBS) 
 
 clean:
-	rx1 rx2 *.o
+	rm rx1 rx2 *.o

@@ -1,6 +1,14 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <time.h>
+#include <fcntl.h>
 #include "trx.h"
 #include <bcm2835.h>
 #include "../../mc/lib/rfm12b_defs.h"
+
+#define RFM_IRQ 22              //IRQ GPIO pin.
+#define RFM_CE BCM2835_SPI_CS1  //SPI chip select
 
 uint16_t
 rf12_xfer(uint16_t cmd)
@@ -101,9 +109,10 @@ _crc16_update(uint16_t crc, uint8_t a)
 	return crc;
 }
 
-void
+uint16_t
 calc_crc(uint8_t group, uint8_t id, uint8_t len, uint8_t* b)
 {
+    int i;
 	uint16_t crc = ~0;
 	crc = _crc16_update(crc, group);
 	crc = _crc16_update(crc, id);
@@ -121,3 +130,8 @@ uint8_t trx_recv()
 	rf12_cmd(0, 0);
 	return rf12_xfer(0xB000);
 }
+
+
+
+
+
