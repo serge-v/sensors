@@ -57,6 +57,22 @@ Raspberry PI and RFM12BS on breadboard
                                                             P1  │
 
 
+80 RGIT/FFIT
+40 POR
+20 RGUR/FFOV
+10 WKUP
+08 EXT Logic level on interrupt pin (pin 16) changed to low
+04 LBD Low battery detect
+02 FFEM FIFO is empty
+01 ATS/RSSI Antenna tuning circuit detected strong enough RF signal
+
+80 DQD Data quality detector output
+40 CRL Clock recovery locked
+20 ATGL Toggling in each AFC cycle
+10 OFFS(6) MSB of the measured frequency offset (sign of the offset value)
+0x OFFS(3)-OFFS(0)
+
+
 Raspberry pi backup steps
 ==========================
 
