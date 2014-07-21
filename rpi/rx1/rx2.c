@@ -5,99 +5,122 @@
 #include <fcntl.h>
 #include "trx.h"
 
-static uint8_t group = 212;         // network group
+static uint8_t group = 212;	    // network group
 
-#define RFM_IRQ 22              //IRQ GPIO pin.
-#define RFM_CE BCM2835_SPI_CS1  //SPI chip select
 #define MAX_SENSORS 20
+#define MAX_ATTEMPTS 10
 
 uint8_t sensors_read[MAX_SENSORS];
+
+struct packet
+{
+	uint8_t id;      // sensor id
+	uint8_t len;     // packet length
+	uint8_t b[254];  // data
+	uint16_t crc;    // original crc
+	uint16_t crc2;   // calculated crc
+};
+
+struct feed_data
+{
+	time_t time;     // time of the measurement
+	int temperature; // temperature in C
+	int humidity;    // humidity in %
+};
+
+static int
+packet_receive(struct packet* p)
+{
+	int i;
+	memset(p, 0, sizeof(struct packet));
+
+	p->id = trx_recv();
+	p->len = trx_recv();
+
+	for(i = 0; i < p->len + 2; i++)
+	{
+		do
+		{
+			p->b[i] = trx_recv();
+		}
+		while (p->b[i] == 0);
+	}
+
+	p->crc = p->b[p->len + 1] << 8;
+	p->crc |= p->b[p->len];
+
+	p->crc2 = calc_crc(group, p->id, p->len, p->b);
+
+	if (p->crc != p->crc2)
+		return 0;
+
+	p->b[p->len] = 0;
+	return 1;
+}
+
+static int
+packet_parse(const struct packet* p, struct feed_data* d)
+{
+	unsigned int tmr = 100;
+	unsigned int hum = 0;
+	d->time = time(NULL);
+	
+	int n = sscanf((char*)p->b, "t,%04X,h,%04X,d", &tmr, &hum);
+	if (n != 2)
+		return 0;
+
+	d->temperature = (tmr & 0x7FF) / 10;
+	if (tmr & 0x8000)
+	    d->temperature = -d->temperature;
+	d->humidity = hum / 10;
+	return 1;
+}
+
+static void
+print_feed(uint8_t id, struct feed_data* d)
+{
+	char time_str[50];
+	struct tm tm;
+	gmtime_r(&d->time, &tm);
+	strftime(time_str, 50, "%Y-%m-%dT%H:%M:%SZ", &tm);
+	printf("%d,%s,%d\n", id, time_str, d->temperature);
+	printf("%d,%s,%d\n", id + 1, time_str, d->humidity);
+}
 
 static int
 all_read()
 {
 	uint8_t i;
 	for (i = 0; i < MAX_SENSORS; i++)
-	{
 		if (sensors_read[i] > 0)
 			return 0;
-	}
-	
 	return 1;
 }
 
 static void
 loop()
 {
-	unsigned char buffer[128];
-	uint8_t i;
 	int j;
+	struct packet p;
+	struct feed_data d;
 
 	trx_enable_receiver();
 
-	for(j = 0; j < 10; j++)
+	for(j = 0; j < MAX_ATTEMPTS; j++)
 	{
 		trx_reset();
+	
+		if (!packet_receive(&p))
+			continue;
+		
+		if (!packet_parse(&p, &d))
+			continue;
 
-		uint8_t id = trx_recv();
-		uint8_t len = trx_recv();
+		print_feed(p.id, &d);
 
-		for(i = 0; i < len + 2; i++)
-		{
-			do
-			{
-				buffer[i] = trx_recv();
-			}
-			while (buffer[i] == 0);
-		}
-
-//		printf("%d  len: %d  ", id, len);
-
-		uint16_t sent_crc = buffer[len + 1] << 8;
-		sent_crc |= buffer[len];
-
-		uint16_t rf12_crc = calc_crc(group, id, len, buffer);
-
-		if (sent_crc == rf12_crc)
-		{
-			buffer[len] = 0;
-			// printf("%s", buffer);
-
-			unsigned int tmr = 100;
-			unsigned int hum = 0;
-
-			int n = sscanf((char*)buffer, "t,%04X,h,%04X,d", &tmr, &hum);
-			if (n != 2)
-				continue;
-
-			int temperature = (tmr & 0x7FF) / 10;
-
-			if (tmr & 0x8000)
-				temperature = -temperature;
-
-			int humidity = hum / 10;
-			int temperatureF = (float)temperature * 9.0 / 5.0 + 32;
-
-			if (0)
-			{
-				printf("%d  %dC %dF RH %d%%\n", id, temperature, temperatureF, humidity);
-			}
-			else
-			{
-				char time_str[50];
-				struct tm tm;
-				time_t now = time(NULL);
-				gmtime_r(&now, &tm);
-				strftime(time_str, 50, "%Y-%m-%dT%H:%M:%SZ", &tm);
-				printf("%d,%s,%d\n", id, time_str, temperature);
-				printf("%d,%s,%d\n", 12, time_str, humidity);
-			}
-
-			sensors_read[id] = 0;
-			if (all_read())
-				return;
-		}
-		memset(buffer, 0, len + 2);
+		sensors_read[p.id] = 0;
+		if (all_read())
+			return;
 	}
 }
 
@@ -117,3 +140,6 @@ int main (void)
 	trx_close();
 	return 0 ;
 }
+
+
+
