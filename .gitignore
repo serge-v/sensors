@@ -1,6 +1,9 @@
 # Object files
 *.o
 *.ko
+*.eep
+*.elf
+*.hex
 
 # Libraries
 *.lib

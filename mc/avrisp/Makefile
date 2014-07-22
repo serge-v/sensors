@@ -59,7 +59,6 @@ AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 AVRDUDE_FLAGS = -F -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) -D \
   -b $(UPLOAD_RATE)
-AVRDUDE_T85_FLAGS = -F -p t85 -P $(AVRDUDE_PORT) -c avrisp -b 19200
 
 # Program settings
 CC = avr-gcc
@@ -106,10 +105,6 @@ upload: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 	sleep 5
 	echo dd > $(AVRDUDE_PORT)
-
-upload85: $(TARGET).hex $(TARGET).eep
-	$(AVRDUDE) $(AVRDUDE_T85_FLAGS) $(AVRDUDE_WRITE_FLASH)
-
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \

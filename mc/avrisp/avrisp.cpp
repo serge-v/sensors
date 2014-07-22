@@ -17,6 +17,9 @@
 // 8: Error       - Lights up if something goes wrong (use red if that makes sense)
 // 7: Programming - In communication with the slave
 //
+// July 21 2014 Serge Voilokov
+// - Convert from ino to cpp and create Makefile
+//
 // 23 July 2011 Randall Bohn
 // -Address Arduino issue 509 :: Portability of ArduinoISP
 // http://code.google.com/p/arduino/issues/detail?id=509
