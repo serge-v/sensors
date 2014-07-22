@@ -56,6 +56,8 @@ Raspberry PI and RFM12BS on breadboard
                                         └──┴───────────┘   └───┘│
                                                             P1  │
 
+RFM12B status bits
+==================
 
 80 RGIT/FFIT
 40 POR
