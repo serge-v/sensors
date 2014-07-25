@@ -1,8 +1,12 @@
 #!/usr/bin/python2
 
-import httplib, os
+import httplib, os, sys
 
-f = os.popen('/home/noro/src/xtree/sensors/rpi/rx1/rx1')
+if 'a' not in sys.argv:
+	print "disabled"
+	sys.exit(0)
+
+f = os.popen('/home/noro/src/xtree/sensors/rpi/rx1/rx2')
 body = f.read()
 f.close()
 

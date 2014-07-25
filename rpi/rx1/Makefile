@@ -8,7 +8,7 @@ all: rx1 rx2
 rx1: rx1.o
 	$(CC) -o $@ $^ $(LIBS) 
 
-rx2: rx2.o trx.o
+rx2: rx2.o trx.o gpio.o
 	$(CC) -o $@ $^ $(LIBS) 
 
 clean:
