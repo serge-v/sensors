@@ -157,18 +157,14 @@ reset_irq()
 static int
 wait_event()
 {
-	struct pollfd fdset[2];
-	int nfds = 2;
+	struct pollfd fdset[1];
+	int nfds = 1;
 	int timeout = 60000;
-	char buf[64];
 
 	memset((void*)fdset, 0, sizeof(fdset));
 
-	fdset[0].fd = STDIN_FILENO;
-	fdset[0].events = POLLIN;
-
-	fdset[1].fd = gpio_fd;
-	fdset[1].events = POLLPRI | POLLERR;
+	fdset[0].fd = gpio_fd;
+	fdset[0].events = POLLPRI | POLLERR;
 
 	int rc = poll(fdset, nfds, timeout);
 
@@ -186,18 +182,12 @@ wait_event()
 		return 0;
 	}
 
-	if (fdset[1].revents & (POLLPRI | POLLERR))
+	if (fdset[0].revents & (POLLPRI | POLLERR))
 	{
 		return 1;
 	}
 
-	if (fdset[0].revents & POLLIN)
-	{
-		(void)read(fdset[0].fd, buf, 1);
-		printf("poll() stdin read 0x%2.2X\n", (unsigned int)buf[0]);
-		return -1;
-	}
-	
+	loge("wait_event: rc: %d", rc);
 	return -1;
 }
 
