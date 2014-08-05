@@ -13,6 +13,7 @@ static uint8_t group = 212;         // network group
 #define MAX_SENSORS 20
 
 uint8_t sensors_read[MAX_SENSORS];
+int irq_fd = -1;
 
 static void
 spi_init()

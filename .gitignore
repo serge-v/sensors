@@ -23,3 +23,9 @@
 
 *~.*
 *.log
+
+rx1
+rx2
+gpio-irq-demo
+gpio-poll-test
+spidev-test

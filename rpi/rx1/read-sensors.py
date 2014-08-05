@@ -1,10 +1,21 @@
 #!/usr/bin/python2
 
-import httplib, os
+import httplib, os, sys
 
-f = os.popen('/home/noro/src/xtree/sensors/rpi/rx1/rx1')
+if 'debug' in sys.argv:
+	print "disabled"
+	sys.exit(0)
+
+log = open('/tmp/rx.log', 'wt')
+log.write('started\n')
+
+f = os.popen('/home/noro/src/xtree/sensors/rpi/rx1/rx2')
 body = f.read()
-f.close()
+rc = f.close()
+if rc is not None:
+	log.write('rc: %d\n', rc)
+	print >> sys.stderr, 'rc: %d' % rc
+	sys.exit(1)
 
 conn = httplib.HTTPSConnection('api.xively.com')
 
@@ -16,4 +27,6 @@ headers = {
 conn.request('PUT', '/v2/feeds/1700338307', body, headers)
 response = conn.getresponse()
 print response.status, response.reason
-print response.read()
+text = response.read()
+print text
+log.write('%s %s\nbody: \n%s\n' % (response.status, response.reason, body))
