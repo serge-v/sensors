@@ -1,4 +1,6 @@
-Programming ATTint85 with Arduino
+Arduino AVRISP version converted from ino project to cpp and Makefile project.
+
+Programming ATTiny85 with Arduino
 =================================
 
 [POW]   [USB]
@@ -27,7 +29,7 @@ Programming ATTint85 with Arduino
                                  │GND│4│   │MOSI│5│11├──┘
                                  └───┴─┴───┴────┴─┴──┘
 
-ATTint85 pins
+ATTiny85 pins
 =============
 
           ┌─┬───┬───┬─┐
