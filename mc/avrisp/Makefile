@@ -103,8 +103,8 @@ sym: $(TARGET).sym
 upload: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(AVRDUDE_PORT)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
-	sleep 5
-	echo dd > $(AVRDUDE_PORT)
+#	sleep 5
+#	echo dd > $(AVRDUDE_PORT)
 
 # Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \

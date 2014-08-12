@@ -1,7 +1,7 @@
 MCU = attiny85
 F_CPU = 1000000
 
-PORT = /dev/ttyACM1
+PORT = /dev/ttyACM0
 
 LIB = ../lib
 CINCS = -I../lib

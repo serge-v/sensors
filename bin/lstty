@@ -1,0 +1,2 @@
+ls --color=always -l /dev/tty[AU]*
+
