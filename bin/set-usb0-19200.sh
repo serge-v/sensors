@@ -1,5 +1,5 @@
 set -x
-stty -F /dev/ttyACM0 cs8 19200 \
+stty -F /dev/ttyUSB0 cs8 19200 \
 -parenb -parodd cs8 -hupcl -cstopb cread clocal -crtscts \
 -ignbrk brkint ignpar -parmrk -inpck -istrip -inlcr -igncr -icrnl ixon -ixoff \
 -iuclc -ixany -imaxbel -iutf8 \

@@ -1,3 +1,5 @@
+#include <avr/wdt.h>
+#include <avr/sleep.h>
 #include <power.h>
 
 void system_sleep()

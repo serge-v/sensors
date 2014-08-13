@@ -15,16 +15,15 @@ temperature transmitter using internal ATTint85 sensor
 #include <am2302.h>
 #include <timer.h>
 #include <power.h>
+#include <tinyt.h>
 
 #define DEBUG
 
 const uint8_t node_id = 12;
 const uint8_t group_id = 212;
 
-unsigned long last_dump = 0;
-unsigned long last_send = 0;
-
-void setup(void)
+void
+setup(void)
 {
 	wdt_disable();
 	dbg_uart_init();
@@ -41,9 +40,10 @@ void setup(void)
 	setup_watchdog(WDTO_8S);
 }
 
-uint8_t dbgstatus = 0;
+uint8_t status = 0;
 
-static void send_status(void)
+static void
+send_status(void)
 {
 #ifdef RECEIVER_CODE
 	rf12_rx_off();
@@ -51,16 +51,10 @@ static void send_status(void)
 #endif
 	int n = 0;
 	char s[20];
+	int temperature = tinyt_read_c();
+	n = sprintf(s, "t,%04X,%x\n", temperature, status);
 
-	if (sensor.error)
-		n = sprintf(s, "e,%x\n", sensor.error);
-	else
-		n = sprintf(s, "t,%04X,h,%04X,d,%x\n",
-		            sensor.temperature,
-		            sensor.humidity,
-		            dbgstatus);
-
-	dbgstatus = 0;
+	status = 0;
 	rf12_send_sync(s, n);
 	printf("%s\n", s);
 #ifdef RECEIVER_CODE
@@ -71,6 +65,10 @@ static void send_status(void)
 
 volatile uint8_t f_wdt = 1;
 uint8_t loop_count = 0;
+
+static void receive()
+{
+}
 
 void loop(void)
 {
@@ -83,7 +81,7 @@ void loop(void)
 
 	if (rf12_wait_rx())
 	{
-		dbgstatus |= 0x80;
+		status |= 0x80;
 
 		enum rf12_state st = rf12_read_rx();
 
@@ -119,16 +117,8 @@ void loop(void)
 	if (loop_count > 2)
 	{
 		cli();
-#ifdef DEBUG
-		sensor.error = 0;
-		sensor.temperature = 0x8020;
-		sensor.humidity = 312;
-#else
-		sensor.error = am2302(&sensor.humidity, &sensor.temperature);
-#endif
 		sei();
 		send_status();
-		last_send = timer0_ms();
 		loop_count = 0;
 	}
 

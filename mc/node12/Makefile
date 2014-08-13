@@ -13,7 +13,8 @@ SRC = \
     $(LIB)/dbg_uart.c \
     $(LIB)/rfm12b.c \
     $(LIB)/timer.c \
-    $(LIB)/power.c
+    $(LIB)/power.c \
+    $(LIB)/tinyt.c
 
 ASRC = \
     $(LIB)/basic_serial.S
