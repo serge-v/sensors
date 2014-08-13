@@ -21,6 +21,9 @@ temperature transmitter using internal ATTint85 sensor
 
 const uint8_t node_id = 12;
 const uint8_t group_id = 212;
+uint8_t status = 0;
+volatile uint8_t f_wdt = 1;
+uint8_t cycles = 0;
 
 void
 setup(void)
@@ -40,34 +43,68 @@ setup(void)
 	setup_watchdog(WDTO_8S);
 }
 
-uint8_t status = 0;
-
 static void
 send_status(void)
 {
-#ifdef RECEIVER_CODE
-	rf12_rx_off();
-	printf("-rx off\n");
-#endif
 	int n = 0;
 	char s[20];
 	int temperature = tinyt_read_c();
 	n = sprintf(s, "t,%04X,%x\n", temperature, status);
-
-	status = 0;
 	rf12_send_sync(s, n);
 	printf("%s\n", s);
-#ifdef RECEIVER_CODE
-	rf12_rx_on();
-	printf("-rx on\n");
-#endif
+	status = 0;
 }
 
-volatile uint8_t f_wdt = 1;
-uint8_t loop_count = 0;
-
-static void receive()
+static uint8_t
+receive_command()
 {
+	enum rf12_state st = IDLE;
+	unsigned long start = timer0_ms();
+
+	rf12_rx_on();
+
+	while ((timer0_ms() - start) < 2000)
+	{
+		if (!rf12_wait_rx())
+			continue;
+
+		status |= 0x80;
+		st = rf12_read_rx();
+		if (st == RX_IN_PROGRESS)
+			continue;
+
+		status |= 0x40;
+	}
+
+	rf12_rx_off();
+
+	if (st == RX_DONE_OK)
+	{
+		status |= 0x20;
+		rf12_data[rf12_len] = 0;
+		printf("    %s", rf12_data);
+	}
+
+	return (st == RX_DONE_OK);
+}
+
+static void
+communicate()
+{
+	send_status();
+
+	if (receive_command())
+	{
+		const char* s = rf12_data;
+		switch (*s)
+		{
+		case 'g':
+			send_debug_info();
+			break;
+		case 'c':
+			calibrate_thermometer();
+			break;
+	}
 }
 
 void loop(void)
@@ -77,53 +114,14 @@ void loop(void)
 
 	f_wdt = 0;
 
-#ifdef RECEIVER_CODE
-
-	if (rf12_wait_rx())
+	if (cycles > 2)
 	{
-		status |= 0x80;
-
-		enum rf12_state st = rf12_read_rx();
-
-		if (st == RX_IN_PROGRESS)
-			return;
-
-		dbgstatus |= 0x40;
-
-		rf12_rx_off();
-		if (st == RX_DONE_OK)
-		{
-			dbgstatus |= 0x20;
-			rf12_data[rf12_len] = 0;
-			printf("    %s", rf12_data);
-			_delay_ms(2000);
-			rf12_send_sync("a\n", 2);
-		}
-		else
-		{
-			printf("    rx12_state: %d\n", st);
-			_delay_ms(2000);
-			char s[20];
-			uint8_t n = snprintf(s, 20, "n,%d\n", rf12_state);
-			rf12_send_sync(s, n);
-		}
-
-		rf12_rx_on();
-		return;
-
-	}
-#endif // RECEIVER_CODE
-
-	if (loop_count > 2)
-	{
-		cli();
-		sei();
-		send_status();
-		loop_count = 0;
+		communicate();
+		cycles = 0;
 	}
 
 	system_sleep();
-	loop_count++;
+	cycles++;
 }
 
 int main(void)
@@ -138,4 +136,3 @@ ISR(WDT_vect)
 {
 	f_wdt = 1;  // set global flag
 }
-

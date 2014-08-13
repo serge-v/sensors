@@ -47,13 +47,13 @@ static void
 start_tx(void)
 {
 	rf12_state = TX_IN_PROGRESS;
-	rf12_cmd(0x82, 0x3D);
+	rf12_cmd(RF_PWR_MGMT, 0x3D);
 }
 
 static void
 set_idle(void)
 {
-	rf12_cmd(0x82, 0x0D);
+	rf12_cmd(RF_PWR_MGMT, 0x0D);
 	rf12_state = IDLE;
 }
 
@@ -518,9 +518,9 @@ rf12_cmd(uint8_t highbyte, uint8_t lowbyte)
 void
 rf12_reset_fifo()
 {
-	rf12_cmd(0xCA, 0x81); // clear ef bit
+	rf12_cmd(RF_FIFO, 0x81); // clear ef bit
 	sidx = 0;
-	rf12_cmd(0xCA, 0x83); // set ef bit
+	rf12_cmd(RF_FIFO, 0x83); // set ef bit
 }
 
 #include "rfm12b_defs.h"
