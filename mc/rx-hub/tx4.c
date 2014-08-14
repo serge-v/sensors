@@ -183,13 +183,7 @@ loop(void)
 		char s[30];
 		unsigned long time = timer0_ms();
 		uint8_t n = snprintf(s, 20, "%d,t,%lu\n", node_id, time);
-		/*
-		rf12_data[n] = 0; // rf12_send will override it with crc
-		printf("%s", rf12_data);
-		rf12_send(n);
-		
-		*/
-		
+	
 		printf("%s", s);
 		rf12_send_sync(s, n);
 		led_dot();
@@ -219,7 +213,7 @@ loop(void)
 			printf("\n");
 
 		led_dot();
-		
+
 		if (sts.rx_enabled)
 			rf12_rx_on();
 	}
@@ -228,7 +222,7 @@ loop(void)
 int main(void)
 {
 	setup();
-	
+
 	while(1)
 		loop();
 }

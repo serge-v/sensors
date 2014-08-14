@@ -537,7 +537,7 @@ rf12_setup(void)
 
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EB | RF_PWR_DC);
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);
-	rf12_cmd(RF_FREQ_CFG, 0x40); // 433.26MHz
+	rf12_cmd(RF_FREQ_CFG, 0x40); // 434,000.0 MHz
 	rf12_cmd(RF_DRATE_CFG, 0x06); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
 	rf12_cmd(RF_DRATE_CFG, 0x11); // 19200
 	rf12_cmd(RF_RX_CTRL|RF_RX_VDI_OUT, RF_RX_RESP_FAST | RF_RX_BW_134 | RF_RX_GAIN_0 | RF_RX_RSSI_M91);
