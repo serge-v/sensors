@@ -4,7 +4,26 @@
 
 #define rf12_cmd(a, b) printf("    0x%02X 0x%02X\n", a, b)
 
-void calc_rfm12b()
+static void
+calc_data_rates()
+{
+	printf("\nRF_DRATE_CFG(0x%02X) values:\n\n", RF_DRATE_CFG);
+	printf("    CS  R  Speed, Kbps\n");
+
+	int cs = 0;
+	for (cs = 0; cs < 2; cs++)
+	{
+		int R = 0;
+		for (R = 0; R < 128; R++)
+		{
+			float BR = 10000000.0f / 29.0f / (float)(R + 1) / (float)(1 + cs * 7);
+			printf("    %d  %2X  %3.2f\n", cs, R, BR);
+		}
+	}
+}
+
+static void
+calc_init_params()
 {
 	printf("rfm12b init params:\n\n");
 
@@ -28,26 +47,13 @@ void calc_rfm12b()
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	
 	printf("%04X\n", (RF_PWR_MGMT << 8) | RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
-
-	printf("\nRF_DRATE_CFG(0x%02X) values:\n\n", RF_DRATE_CFG);
-	printf("    CS  R  Speed, Kbps\n");
-
-	int cs = 0;
-	for (cs = 0; cs < 2; cs++)
-	{
-		int R = 0;
-		for (R = 0; R < 128; R++)
-		{
-			float BR = 10000000.0f / 29.0f / (float)(R + 1) / (float)(1 + cs * 7);
-			printf("    %d  %2X  %3.2f\n", cs, R, BR);
-		}
-	}
 }
 
 #define OVERFLOW_MS (1000.0 / ((float)F_CPU / (float)CLK_DIVIDER) * 256)
 #define OVERFLOW_NS ((uint16_t)(1000000.0 / ((float)F_CPU / (float)CLK_DIVIDER) * 256) % 1000)
 
-void calc_timer()
+static void
+calc_timer()
 {
 
 #define F_CPU 16000000
@@ -67,9 +73,37 @@ void calc_timer()
 	ns = OVERFLOW_NS;
 	printf("ms: %lu, ns: %lu\n", ms, ns);
 }
+/*
+4． Frequency Setting Command
+
+bit 15  14  13  12  11  10  9  8  7  6  5  4  3  2  1  0    POR
+     1   0   1   0 f11 f10 f9 f8 f7 f6 f5 f4 f3 f2 f1 f0    A680h
+
+f11..f0: Set operation frequency:
+
+	433 band: Fc = 430 + F * 0.0025 MHz
+	868 band: Fc = 860 + F * 0.0050 MHz
+	915 band: Fc = 900 + F * 0.0075 MHz
+
+Fc is carrier frequency and F is the frequency parameter. 36<=F<=3903
+*/
+static void
+calc_frequency()
+{
+	printf("\nRF_FREQ_CFG\nBand F      Freq, Mhz\n");
+	int F;
+	for (F = 36; F <= 3903; F++)
+	{
+		float freq = (430.0f + (float)F * 0.0025f);
+		printf("433  A%03X    %.4f\n", F, freq);
+	}
+	printf("\n");
+}
 
 int main()
 {
-	calc_rfm12b();
+	calc_init_params();
+	calc_data_rates();
 	calc_timer();
+	calc_frequency();
 }

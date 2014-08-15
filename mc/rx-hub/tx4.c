@@ -13,30 +13,11 @@
 
 FILE serial_stream = FDEV_SETUP_STREAM(serial_putchar, serial_getchar, _FDEV_SETUP_RW);
 
-static void enter_setup_mode(void)
-{
-	printf("setup mode\n");
-
-	char c = 0;
-
-	do
-	{
-		c = getchar();
-
-	}
-	while (c != 'q');
-}
-
 static void blink_start(void)
 {
-	led_dash(); led_dot(); led_dot();
-	led_space();
-	led_dot();
-	led_space();
-	led_space();
-	led_space();
 	led_dash();
-	led_space();
+	led_dot();
+	led_dot();
 }
 
 void setup(void)
@@ -50,29 +31,17 @@ void setup(void)
 	printf("tx4 %s %s\n", __DATE__, __TIME__);
 	timer0_start();
 	
-	uint8_t setup_mode = 0;
-	
 	for (uint8_t i = 0; i < 5; i++)
 	{
 		printf("%lu\n", timer0_ms());
-		_delay_ms(1000);
-		if (serial_available())
-		{
-			char c = getchar();
-			if (c == 's')
-				setup_mode = 1;
-		}
+		_delay_ms(100);
 	}
 
-	if (setup_mode)
-		enter_setup_mode();
-
-	printf("i");
+	printf("i1\n");
 	rf12_initialize(node_id, network);
-	printf("n");
-	printf("i");
+	printf("i2\n");
 	rf12_rx_on();
-	printf("t\n");
+	printf("i3\n");
 }
 
 unsigned long last_send = 0;
@@ -183,13 +152,7 @@ loop(void)
 		char s[30];
 		unsigned long time = timer0_ms();
 		uint8_t n = snprintf(s, 20, "%d,t,%lu\n", node_id, time);
-		/*
-		rf12_data[n] = 0; // rf12_send will override it with crc
-		printf("%s", rf12_data);
-		rf12_send(n);
-		
-		*/
-		
+	
 		printf("%s", s);
 		rf12_send_sync(s, n);
 		led_dot();
@@ -211,7 +174,7 @@ loop(void)
 			if (rf12_node >= 10 && rf12_node < 20)
 				print_temperature_sensor();
 			else
-				printf("%d  %s", rf12_node, rf12_data);
+				printf("%d  %s\n", rf12_node, rf12_data);
 			
 			rf12_state = IDLE;
 		}
@@ -219,7 +182,7 @@ loop(void)
 			printf("\n");
 
 		led_dot();
-		
+
 		if (sts.rx_enabled)
 			rf12_rx_on();
 	}
@@ -228,7 +191,7 @@ loop(void)
 int main(void)
 {
 	setup();
-	
+
 	while(1)
 		loop();
 }

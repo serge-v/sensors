@@ -84,13 +84,13 @@ u1: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(PORT1)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS1) $(AVRDUDE_WRITE_FLASH)
 	sleep 5
-	echo d > $(PORT1)
+	echo g > $(PORT1)
 
 u2: $(TARGET).hex $(TARGET).eep
 	-kill `pgrep -f "cat $(PORT2)"`
 	$(AVRDUDE) $(AVRDUDE_FLAGS2) $(AVRDUDE_WRITE_FLASH)
 	sleep 5
-	echo r1111t > $(PORT2)
+	echo g > $(PORT2)
 
 include ../lib/make/elf.mk
 include ../lib/make/gcc.mk

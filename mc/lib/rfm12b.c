@@ -3,7 +3,9 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <string.h>
 #include "rfm12b.h"
+#include "rfm12b_defs.h"
 
 #define RF12_SELECT   (SELECT_PORT &= ~_BV(SELECT_PIN))
 #define RF12_UNSELECT (SELECT_PORT |= _BV(SELECT_PIN))
@@ -157,7 +159,7 @@ rx_interrupt(void)
 	else if (sidx == 2)
 	{
 		rf12_len = c;
-		if (rf12_len == 0 || rf12_len >= BUF_SIZE)
+		if (rf12_len == 0 || rf12_len >= (BUF_SIZE-5))
 		{
 			rf12_len = 0;
 			rf12_state = RX_DONE_OVERFLOW;
@@ -523,8 +525,6 @@ rf12_reset_fifo()
 	rf12_cmd(RF_FIFO, 0x83); // set ef bit
 }
 
-#include "rfm12b_defs.h"
-
 void
 rf12_setup(void)
 {
@@ -537,7 +537,7 @@ rf12_setup(void)
 
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_EB | RF_PWR_DC);
 	rf12_cmd(RF_CONFIG, RF_CONFIG_EL | RF_CONFIG_EF | RF_FFREQ_433 | RF_CAP_120pF);
-	rf12_cmd(RF_FREQ_CFG, 0x40); // 433.26MHz
+	rf12_cmd(RF_FREQ_CFG, 0x40); // 434,000.0 MHz
 	rf12_cmd(RF_DRATE_CFG, 0x06); // approx 49.2 Kbps, i.e. 10000/29/(1+6) Kbps
 	rf12_cmd(RF_DRATE_CFG, 0x11); // 19200
 	rf12_cmd(RF_RX_CTRL|RF_RX_VDI_OUT, RF_RX_RESP_FAST | RF_RX_BW_134 | RF_RX_GAIN_0 | RF_RX_RSSI_M91);
@@ -570,6 +570,7 @@ rf12_rx_on()
 	sidx = 0;
 	rf12_len = 0;
 	rf12_node = 0;
+	memset(rf12_packet, 0, BUF_SIZE);
 	rf12_state = RX_ON;
 #if defined(__AVR_ATmega328P__)
 	enable_interrupt(rx_interrupt);
