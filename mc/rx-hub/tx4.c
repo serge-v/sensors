@@ -174,7 +174,7 @@ loop(void)
 			if (rf12_node >= 10 && rf12_node < 20)
 				print_temperature_sensor();
 			else
-				printf("%d  %s", rf12_node, rf12_data);
+				printf("%d  %s\n", rf12_node, rf12_data);
 			
 			rf12_state = IDLE;
 		}
