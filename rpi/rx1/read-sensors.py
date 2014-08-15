@@ -2,6 +2,9 @@
 
 import httplib, os, sys
 
+# disabled for driver testing
+sys.exit(0)
+
 if 'debug' in sys.argv:
 	print "disabled"
 	sys.exit(0)
