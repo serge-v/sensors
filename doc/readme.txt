@@ -1,5 +1,6 @@
 Temperature Measurement
 =======================
+From: ATtiny25/45/85 [DATASHEET] 2586Q-AVR-08/2013
 
 17.3   Operation
 
@@ -116,8 +117,49 @@ used  to  determine  if  a  conversion is in progress. The ADSC
 bit  will  be  read  as  one during a conversion, independently 
 of how the conversion was started.
 
-ATtiny25/45/85 [DATASHEET]
-2586Q-AVR-08/2013
+...
+
+17.12 Temperature Measurement
+
+The  temperature measurement is based on an on-chip temperature 
+sensor that is coupled to a single ended ADC4 channel. Selecting 
+the ADC4 channel by writing the MUX[3:0] bits in ADMUX register 
+to  "1111"  enables  the  temperature sensor. The internal 1.1V 
+reference  must  also  be selected for the ADC reference source 
+in  the  temperature  sensor  measurement. When the temperature 
+sensor  is  enabled,  the  ADC  converter can be used in single 
+conversion  mode  to  measure  the voltage over the temperature 
+sensor.
+
+The measured voltage has a linear relationship to the temperature 
+as  described  in  Table 17-2. The sensitivity is approximately 
+1 LSB/C and the accuracy depends on the method of user calibration. 
+Typically,  the measurement accuracy after a single temperature 
+calibration is +- 10C, assuming calibration at room temperature. 
+Better  accuracies are achieved by using two temperature points 
+for calibration.
+
+Table  17-2.  Temperature  vs.  Sensor  Output Voltage (Typical 
+Case)
+
+Temperature -40C     +25C     +85C
+ADC         230 LSB  300 LSB  370 LSB
+
+The values described in Table 17-2 are typical values. However, 
+due  to process variation the temperature sensor output voltage 
+varies  from  one  chip  to another. To be capable of achieving 
+more  accurate  results  the  temperature  measurement  can  be 
+calibrated in the application software. The sofware calibration 
+can be done using the formula:
+
+T = k * [(ADCH << 8) | ADCL] + TOS
+
+where  ADCH  and  ADCL  are  the  ADC  data registers, k is the 
+fixed  slope  coefficient  and  TOS  is  the temperature sensor 
+offset.  Typically,  k is very close to 1.0 and in single-point 
+calibration  the  coefficient  may  be  omitted.  Where  higher 
+accuracy  is required the slope coefficient should be evaluated 
+based on measurements at two temperatures.
 
 Resistor color codes
 ====================

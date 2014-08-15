@@ -24,6 +24,8 @@ const uint8_t group_id = 212;
 uint8_t status = 0;
 volatile uint8_t f_wdt = 1;
 uint8_t cycles = 0;
+int temperature = -100;
+int offset = 0;
 
 void
 setup(void)
@@ -48,7 +50,6 @@ send_status(void)
 {
 	int n = 0;
 	char s[20];
-	int temperature = tinyt_read_c();
 	n = sprintf(s, "t,%04X,%x\n", temperature, status);
 	rf12_send_sync(s, n);
 	printf("%s\n", s);
@@ -89,6 +90,11 @@ receive_command()
 }
 
 static void
+calibrate_thermometer(void)
+{
+}
+
+static void
 communicate()
 {
 	send_status();
@@ -98,12 +104,10 @@ communicate()
 		const char* s = rf12_data;
 		switch (*s)
 		{
-		case 'g':
-			send_debug_info();
-			break;
 		case 'c':
 			calibrate_thermometer();
 			break;
+		}
 	}
 }
 
@@ -116,6 +120,9 @@ void loop(void)
 
 	if (cycles > 2)
 	{
+		adc_enable_temperature_sensor(offset);
+		temperature = adc_get_temperature();
+		adc_disable();
 		communicate();
 		cycles = 0;
 	}

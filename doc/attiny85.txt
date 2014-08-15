@@ -1,9 +1,242 @@
-    Atmel 8-bit AVR Microcontroller with 2/4/8K
-    Bytes In-System Programmable Flash
+Atmel 8-bit AVR Microcontroller with 2/4/8K Bytes In-System Programmable Flash
 
-                         ATtiny25/V / ATtiny45/V / ATtiny85/V
+
+Table of Contents
+    
+	 Features
+
+1   Pin Configurations
+
+1.1       Pin Descriptions
+
+2   Overview
+
+2.1       Block Diagram
+
+3   About
+
+3.1       Resources
+3.2       Code Examples
+3.3       Capacitive Touch Sensing
+3.4       Data Retention
+
+4   AVR CPU Core
+
+4.1       Introduction
+4.2       Architectural Overview
+4.3       ALU – Arithmetic Logic Unit
+4.4       Status Register
+4.5       General Purpose Register File
+4.6       Stack Pointer
+4.7       Instruction Execution Timing
+4.8       Reset and Interrupt Handling
+
+5   AVR Memories
+
+5.1       In-System Re-programmable Flash Program Memory
+5.2       SRAM Data Memory
+5.3       EEPROM Data Memory
+5.4       I/O Memory
+5.5       Register Description
+
+6   System Clock and Clock Options
+
+6.1       Clock Systems and their Distribution
+6.2       Clock Sources
+6.3       System Clock Prescaler
+6.4       Clock Output Buffer
+6.5       Register Description
+
+7   Power Management and Sleep Modes
+
+7.1       Sleep Modes
+7.2       Software BOD Disable
+7.3       Power Reduction Register
+7.4       Minimizing Power Consumption
+7.5       Register Description
+
+8     System Control and Reset
+
+8.1       Resetting the AVR
+8.2       Reset Sources
+8.3       Internal Voltage Reference
+8.4       Watchdog Timer
+8.5       Register Description
+
+9     Interrupts
+
+9.1       Interrupt Vectors in ATtiny25/45/85
+9.2       External Interrupts
+9.3       Register Description
+
+10 I/O Ports
+
+10.1      Introduction
+10.2      Ports as General Digital I/O
+10.3      Alternate Port Functions
+10.4      Register Description
+
+11 8-bit Timer/Counter0 with PWM
+
+11.1      Features
+11.2      Overview
+11.3      Timer/Counter0 Prescaler and Clock Sources
+11.4      Counter Unit
+11.5      Output Compare Unit
+11.6      Compare Match Output Unit
+11.7      Modes of Operation
+11.8      Timer/Counter Timing Diagrams
+11.9      Register Description
+
+12 8-bit Timer/Counter1
+
+12.1      Timer/Counter1 Prescaler
+12.2      Counter and Compare Units
+12.3      Register Description
+
+13 8-bit Timer/Counter1 in ATtiny15 Mode
+
+13.1      Timer/Counter1 Prescaler
+13.2     Counter and Compare Units
+13.3     Register Description
+
+14 Dead Time Generator
+
+14.1     Register Description
+
+15 USI – Universal Serial Interface
+
+15.1     Features
+15.2     Overview
+15.3     Functional Descriptions
+15.4     Alternative USI Usage
+15.5     Register Descriptions
+
+16 Analog Comparator
+
+16.1     Analog Comparator Multiplexed Input
+16.2     Register Description
+
+17 Analog to Digital Converter
+
+17.1     Features
+17.2     Overview
+17.3     Operation
+17.4     Starting a Conversion
+17.5     Prescaling and Conversion Timing
+17.6     Changing Channel or Reference Selection
+17.7     ADC Noise Canceler
+17.8     Analog Input Circuitry
+17.9     Noise Canceling Techniques
+17.10    ADC Accuracy Definitions
+17.11    ADC Conversion Result
+17.12    Temperature Measurement
+17.13    Register Description
+
+18 debugWIRE On-chip Debug System
+
+18.1     Features
+18.2     Overview
+18.3     Physical Interface
+18.4     Software Break Points
+18.5     Limitations of debugWIRE
+18.6     Register Description
+
+19 Self-Programming the Flash
+
+19.1     Performing Page Erase by SPM
+19.2     Filling the Temporary Buffer (Page Loading)
+19.3     Performing a Page Write
+19.4     Addressing the Flash During Self-Programming
+19.5     EEPROM Write Prevents Writing to SPMCSR
+19.6     Reading Lock, Fuse and Signature Data from Software
+19.7     Preventing Flash Corruption
+19.8     Programming Time for Flash when Using SPM
+19.9     Register Description
+
+20 Memory Programming
+
+20.1     Program And Data Memory Lock Bits
+20.2     Fuse Bytes
+20.3     Device Signature Imprint Table
+20.4     Page Size
+20.5     Serial Downloading
+20.6     High-voltage Serial Programming
+20.7     High-voltage Serial Programming Algorithm
+
+21 Electrical Characteristics
+
+21.1     Absolute Maximum Ratings*
+21.2     DC Characteristics
+21.3     Speed
+21.4     Clock Characteristics
+21.5     System and Reset Characteristics
+21.6     Brown-Out Detection
+21.7     ADC Characteristics
+21.8     Serial Programming Characteristics
+21.9     High-voltage Serial Programming Characteristics
+
+22 Typical Characteristics
+
+22.1     Active Supply Current
+22.2     Idle Supply Current
+22.3     Supply Current of I/O modules
+22.4     Power-down Supply Current
+22.5     Pin Pull-up
+22.6     Pin Driver Strength
+22.7     Pin Threshold and Hysteresis
+22.8     BOD Threshold
+22.9      Internal Oscillator Speed
+22.10     Current Consumption of Peripheral Units
+22.11     Current Consumption in Reset and Reset Pulsewidth
+
+23 Register Summary
+
+24 Instruction Set Summary
+
+25 Ordering Information
+
+25.1      ATtiny25
+25.2      ATtiny45
+25.3      ATtiny85
+
+26 Packaging Information
+
+26.1      8P3
+26.2      8S2
+26.3      S8S1
+26.4      8X
+26.5      20M1
+
+27 Errata
+
+27.1      Errata ATtiny25
+27.2      Errata ATtiny45
+27.3      Errata ATtiny85
+
+28 Datasheet Revision History
+
+28.1      Rev. 2586Q-08/13
+28.2      Rev. 2586P-06/13
+28.3      Rev. 2586O-02/13
+28.4      Rev. 2586N-04/11
+28.5      Rev. 2586M-07/10
+28.6      Rev. 2586L-06/10
+28.7      Rev. 2586K-01/08
+28.8      Rev. 2586J-12/06
+28.9      Rev. 2586I-09/06
+28.10     Rev. 2586H-06/06
+28.11     Rev. 2586G-05/06
+28.12     Rev. 2586F-04/06
+28.13     Rev. 2586E-03/06
+28.14     Rev. 2586D-02/06
+28.15     Rev. 2586C-06/05
+28.16     Rev. 2586B-05/05
+28.17     Rev. 2586A-02/05
+
 
 Features
+
 • High Performance, Low Power AVR® 8-Bit Microcontroller
 • Advanced RISC Architecture
        – 120 Powerful Instructions – Most Single Clock Cycle Execution
@@ -7295,15 +7528,10 @@ Table 17-1.         ADC Conversion Time
         • Place bypass capacitors as close to VCC and GND pins as possible.
 
 
-       Where high ADC accuracy is required it is recommended to use ADC Noise Reduction Mode, as described in Sec-
-       tion 17.7 on page 128. This is especially the case when system clock frequency is above 1 MHz, or when the ADC
-
-
-                                                                                      ATtiny25/45/85 [DATASHEET]              129
-                                                                                                          2586Q–AVR–08/2013
-     is used for reading the internal temperature sensor, as described in Section 17.12 on page 133. A good system
-     design with properly placed, external bypass capacitors does reduce the need for using ADC Noise Reduction
-     Mode
+Where high ADC accuracy is required it is recommended to use ADC Noise Reduction Mode, as described in Sec-
+tion 17.7 on page 128. This is especially the case when system clock frequency is above 1 MHz, or when the ADC
+is used for reading the internal temperature sensor, as described in Section 17.12 on page 133. A good system
+design with properly placed, external bypass capacitors does reduce the need for using ADC Noise Reduction Mode.
 
 17.10 ADC Accuracy Definitions
      An n-bit single-ended ADC converts a voltage linearly between GND and VREF in 2n steps (LSBs). The lowest code
