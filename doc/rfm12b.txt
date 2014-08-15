@@ -1,0 +1,1766 @@
+http://www.hoperf.com/upload/rf/RFm12b.pdf
+
+RFM12B Universal ISM
+
+	1. Configuration Setting Command
+	2. Power Management Command
+	3. Frequency Setting Command
+	4. Data Rate Command
+	5. Receiver Control Command
+	6. Data Filter Command
+	7. FIFO and Reset Mode Command
+	8. Synchron Pattern Command
+	9. Receiver FIFO Read Command
+	10. AFC Command
+	11. TX Configuration Control Command
+	12. PLL Setting Command
+	13. Transmitter Register Write Command
+	14. Wake-Up Timer Command
+	15. Low Duty-Cycle Command
+	16. Low Battery Detector and Microcontroller Clock Divider Command
+	17. Status Read Command
+
+
+Band FSK Transceiver
+
+DESCRIPTION
+
+Hoperf’ RFM12B is a single chip, low power, multi-channel FSK
+transceiver designed for use in applications requiring FCC or ETSI
+conformance for unlicensed use in the 433, 868 and 915 MHz bands.
+The RFM12B transceiver is a part of Hoperf’ EZRadioTM
+product line,
+which produces a flexible, low cost, and highly integrated solution that
+does not require production alignments. The chip is a complete
+analog RF and baseband transceiver including a multi-band PLL
+synthesizer with PA, LNA, I/Q down converter mixers, baseband filters
+and amplifiers, and an I/Q demodulator. All required RF functions are
+integrated. Only an external crystal and bypass filtering are needed for
+operation.
+
+The RFM12B features a completely integrated PLL for easy RF
+design, and its rapid settling time allows for fast frequency-hopping,
+bypassing multipath fading and interference to achieve robust wireless
+links. The PLL’s high resolution allows the usage of multiple channels
+in any of the bands. The receiver baseband bandwidth (BW) is
+programmable to accommodate various deviation, data rate and
+crystal tolerance requirements. The transceiver employs the Zero-IF
+approach with I/Q demodulation. Consequently, no external
+components (except crystal and decoupling) are needed in most
+applications.
+
+The RFM12B dramatically reduces the load on the microcontroller with
+the integrated digital data processing features: data filtering, clock
+recovery, data pattern recognition, integrated FIFO and TX data
+register. The automatic frequency control (AFC) feature allows the use
+of a low accuracy (low cost) crystal. To minimize the system cost, the
+RFM12B can provide a clock signal for the microcontroller, avoiding
+the need for two crystals.
+
+For low power applications, the RFM12B supports low duty cycle
+operation based on the internal wake-up timer.
+
+FUNCTIONAL BLOCK DIAGRAM
+
+MIX
+RFM12B
+FEATURES
+• Fully integrated (low BOM, easy design-in)
+• No alignment required in production
+• Fast-settling, programmable, high-resolution PLL synthesizer
+• Fast frequency-hopping capability
+• High bit rate (up to 115.2 kbps in digital mode and 256 kbps
+in analog mode)
+• Direct differential antenna input/output
+• Integrated power amplifier
+• Programmable TX frequency deviation (15 to 240 kHz)
+• Programmable RX baseband bandwidth (67 to 400 kHz)
+• Analog and digital RSSI outputs
+• Automatic frequency control (AFC)
+• Data quality detection (DQD)
+• Internal data filtering and clock recovery
+• RX synchron pattern recognition
+• SPI compatible serial control interface
+• Clock and reset signals for microcontroller
+• 16-bit RX Data FIFO
+• Two 8-bit TX data registers
+• Low power duty cycle mode
+• Standard 10 MHz crystal reference with on-chip tuning
+• Wake-up timer
+• 2.2 to 3.8 V supply voltage
+RF1 13
+I
+AMP OC
+I/Q Data Filt
+7
+DCLK /
+CFIL /
+FFIT /
+• Low power consumption
+RF2 12
+LNA
+MIX
+Q
+Self cal.
+AMP OC
+DEMOD CLK Rec
+data FSK /
+6
+DATA /
+nFFS
+• Low standby current (0.3 μA)
+• Compact 16 pin TSSOP package
+PA
+RF Parts
+PLL & I/Q VCO
+with cal.
+BB Amp/Filt./Limiter
+RSSI
+COMP DQD AFC
+FIFO
+Data processing units
+• Supports very short packets (down to 3 bytes)
+• Excellent temperature stability of the RF parameters
+• Good adjacent channel rejection/blocking
+TYPICAL APPLICATIONS
+CLK div Xosc
+WTM
+with cal.
+LBD
+Low Power parts
+Controller Bias
+• Home security and alarm
+• Remote control, keyless entry
+8 9 15 1 2 3 4 5 10 16 11 14
+• Wireless keyboard/mouse and other PC peripheralsCLK XTL /
+REF
+ARSSI SDI SCK nSEL SDO nIRQ nRES nINT /
+VDI
+VSS VDD
+• Toy controls
+• Remote keyless entry
+• Tire pressure monitoring
+• Telemetry
+• Personal/patient data logging
+• Remote automatic meter reading
+1
+RFM12B
+2
+DETAILED FEATURE-LEVEL DESCRIPTION
+The RFM12B FSK transceiver is designed to cover the
+unlicensed frequency bands at 433, 868 and 915 MHz. The
+device facilitates compliance with FCC and ETSI requirements.
+The receiver block employs the Zero-IF approach with I/Q
+demodulation, allowing the use of a minimal number of external
+components in a typical application. The RFM12B incorporates
+a fully integrated multi-band PLL synthesizer, PA with
+antenna tuning, an LNA with switchable gain, I/Q down
+converter mixers, baseband filters and amplifiers, and an I/Q
+demodulator followed by a data filter.
+PLL
+The programmable PLL synthesizer determines the operating
+frequency, while preserving accuracy based on the on-chip crystal-
+controlled reference oscillator. The PLL’s high resolution allows the
+usage of multiple channels in any of the bands.
+RF Power Amplifier (PA)
+The power amplifier has an open-collector differential output and
+can directly drive different PCB antennas with a programmable
+output power level. An automatic antenna tuning circuit is built in
+to avoid costly trimming procedures and the so-called “hand
+effect”.
+LNA
+The LNA has approximately 250 Ohm input impedance, which
+functions well with the proposed antennas
+If the RF input of the chip is connected to 50 Ohm devices, an
+external matching circuit is required to provide the correct
+matching and to minimize the noise figure of the receiver.
+The LNA gain can be selected in four steps (between 0 and
+-20dB relative to the highest gain) according to RF signal
+strength. It can be useful in an environment with strong
+interferers.
+Baseband Filters
+The receiver bandwidth is selectable by programming the
+bandwidth (BW) of the baseband filters. This allows setting up
+the receiver according to the characteristics of the signal to be
+received.
+An appropriate bandwidth can be chosen to accommodate
+various FSK deviation, data rate and crystal tolerance
+requirements. The filter structure is 7th order Butterworth low-
+pass with 40 dB suppression at 2 · BW frequency. Offset
+cancellation is done by using a high-pass filter with a cut-off
+frequency below 7 kHz.
+Full Baseband Amplifier Transfer Function
+BW=67kHz
+Data Filtering and Clock Recovery
+Output data filtering can be completed by an external capacitor
+or by using digital filtering according to the final application.
+Analog operation: The filter is an RC type low-pass filter followed
+by a Schmitt-trigger (St). The resistor (10 kOhm) and the St are
+integrated on the chip. An (external) capacitor can be chosen
+according to the actual bit rate. In this mode, the receiver can
+handle up to 256 kbps data rate. The FIFO cannot be used in this
+mode and clock is not provided for the demodulated data.
+Digital operation: A digital filter is used with a clock frequency at
+29 times the bit rate. In this mode, there is a clock recovery
+circuit (CR), which can provide synchronized clock to the data.
+Using this clock the received data can fill a FIFO. The CR has
+three operation modes: fast, slow, and automatic. In slow mode,
+its noise immunity is very high, but it has slower settling time and
+requires more accurate data timing than in fast mode. In
+automatic mode, the CR automatically changes between fast and
+slow mode. The CR starts in fast mode, then after locking, it
+automatically switches to slow mode
+(Only the digital data filter and the clock recovery use the bit rate
+clock. For analog operation, there is no need for setting the
+correct bit rate.)
+RFM12B
+3
+Data Validity Blocks
+RSSI
+A digital RSSI output is provided to monitor the input signal level.
+It goes high if the received signal strength exceeds a given
+preprogrammed level. An analog RSSI signal is also available.
+The RSSI settling time depends on the external filter capacitor.
+Pin 15 is used as analog RSSI output. The digital RSSI can be
+monitored by reading the status register.
+Typical Analog ARSSI Voltage vs. RF Input Power
+DQD
+The operation of the Data Quality Detector is based on counting
+the spikes on the unfiltered received data. High output signal
+indicates an operating FSK transmitter within baseband filter
+bandwidth from the local oscillator. DQD threshold parameter
+can be set by using the Data Filter Command.
+AFC
+By using an integrated Automatic Frequency Control (AFC)
+feature, the receiver can minimize the TX/RX offset in discrete
+steps, allowing the use of:
+• Narrower receiver bandwidth (i.e. increased
+sensitivity)
+• Higher data rate
+• Inexpensive crystals
+Crystal Oscillator
+The RFM12B has a single-pin crystal oscillator circuit, which
+provides a 10 MHz reference signal for the PLL. To reduce
+external parts and simplify design, the crystal load capacitor is
+internal and programmable. Guidelines for selecting the
+appropriate crystal can be found later in this datasheet.
+The transceiver can supply a clock signal for the microcontroller;
+so accurate timing is possible without the need for a second
+crystal.
+When the microcontroller turns the crystal oscillator off by
+clearing the appropriate bit using the Power Management
+Command, the chip provides a fixed number (192) of further
+clock pulses (“clock tail”) for the microcontroller to let it go to
+idle or sleep mode. If this clock output is not used, it is
+suggested to turn the output buffer off by the Power
+Management Command.
+Low Battery Voltage Detector
+The low battery detector circuit monitors the supply voltage and
+generates an interrupt if it falls below a programmable threshold
+level. The detector circuit has 50 mV hysteresis.
+Wake-Up Timer
+The wake-up timer has very low current consumption (1.5 µA
+typical) and can be programmed from 1 ms to several days with
+an accuracy of ±10%.
+The wake-up timer calibrates itself to the crystal oscillator at
+every startup. For proper calibration of the wake-up timer the
+crystal oscillator must be running before the wake-up timer is
+enabled. The calibration process takes approximately 0.5ms.
+For the crystal start up time(tsx).
+Event Handling
+In order to minimize current consumption, the transceiver
+supports different power saving modes. Active mode can be
+initiated by several wake-up events (negative logical pulse on
+nINT input, wake-up timer timeout, low supply voltage detection,
+on-chip FIFO filled up or receiving a request through the serial
+interface).
+If any wake-up event occurs, the wake-up logic generates an
+interrupt signal, which can be used to wake up the
+microcontroller, effectively reducing the period the
+microcontroller has to be active. The source of the interrupt can
+be read out from the transceiver by the microcontroller through
+the SDO pin.
+Interface and Controller
+An SPI compatible serial interface lets the user select the
+frequency band, center frequency of the synthesizer, and the
+bandwidth of the baseband signal path. Division ratio for the
+microcontroller clock, wake-up timer period, and low supply
+voltage detector threshold are also programmable. Any of these
+auxiliary functions can be disabled when not needed. All
+parameters are set to default after power-on; the programmed
+values are retained during sleep mode. The interface supports
+the read-out of a status register, providing detailed information
+about the status of the transceiver and the received data.
+The transmitter block is equipped with two 8-bit wide TX data
+registers. It is possible to write 8 bits into the register in burst
+mode and the internal bit rate generator transmits the bits out
+with the predefined rate. For further details, see the TX Register
+Buffered Data Transmission section.
+It is also possible to store the received data bits into a FIFO
+register and read them out in a buffered mode.
+RFM12B
+4
+PACKAGE PIN DEFINITIONS
+Pin type key: D=digital, A=analog, S=supply, I=input, O=output, IO=input/output
+SMD DIP
+definition  Type  Function 
+nINT/VDI  DI/ DO  Interrupt input (active low)/Valid data indicator 
+VDD  S  Positive power supply 
+SDI  DI  SPI data input 
+SCK  DI  SPI clock input 
+nSEL  DI  Chip select (active low) 
+SDO  DO  Serial data output with bus hold 
+nIRQ  DO  Interrupts request output（active low） 
+FSK/DATA/nFFS  DI/DO/DI  Transmit FSK data input/ Received data output (FIFO not used)/ FIFO select 
+DCLK/CFIL/FFIT  DO/AIO/DO  Clock  output  (no  FIFO  )/  external  filter  capacitor(analog  mode)/  FIFO 
+interrupts(active high)when FIFO level set to 1, FIFO empty interruption can 
+be achieved 
+CLK  DO  Clock output for external microcontroller  
+nRES  DIO  Reset output（active low） 
+GND  S  Power ground  
+RFM12B
+5
+Internal Pin Connections
+Pin Name Internal connection Pin Name Internal connection
+1 SDI VDD
+2 SCK PAD
+1.5k
+10 nRES
+3 nSEL VSS
+4 SDO 11 VSS
+12 RF2
+5 nIRQ
+13 RF1
+FSK
+6 DATA 14 VDD
+nFFS
+DLCK
+7 CFIL
+15 ARSSI
+FFIT
+VDD
+nINT
+8 CLK PAD
+10
+16
+VDI
+VSS
+XTL
+9
+REF
+RFM12B
+6
+PIN6 Logic Diagram (FSK / DATA / nFFS)
+PIN10 Logic Diagram (nRES I/O)
+* Note: These pins can be left floating.
+RFM12B
+7
+Property C1 C2 C3
+SMD size A 0603 0603
+Dielectric Tantalum Ceramic Ceramic
+Typical Application
+Typical application with FIFO usage
+VDD
+C1
+2.2u
+C3 C2
+10n
+P7
+VDI
+P6
+SDI
+P5
+SCK
+P4
+nSEL
+P3
+SDO
+P2
+nIRQ
+P1
+nFFS
+P0
+FFIT
+(optional)
+(optional)*
+(optional)*
+1 16
+2 15
+3 14
+4 13
+5 RFM12B 12
+6 11
+7 10
+TP C4
+2.2n (opt.)
+CLKin
+nRESin
+CLK
+nRES
+(optional) 8 9
+(optional)
+X1
+10MHz
+PCB
+Antenna
+Note: * Connections needed only in time critical applications
+Recommended supply decoupling capacitor values
+C2 and C3 should be 0603 size ceramiccapacitors to achieve the best supply decoupling.
+Band [MHz] C1 C2 C3
+433 2.2µF 10nF 220pF
+868 2.2µF 10nF 47pF
+915 2.2µF 10nF 33pF
+Pin Function vs. Operation Mode
+Mode Bit setting Function Pin 6 Pin 7
+el = 0 Internal TX data register disabled TX data input
+Transmit
+el = 1 Internal TX data register enabled
+nFFS input
+(TX data register can be accessed)
+Not used
+ef = 0 Receiver FIFO disabled RX data output
+RX data clock
+output
+Receive
+ef = 1 Receiver FIFO disabled
+nFFS input
+(RX data FIFO can be accessed)
+FFIT output
+The el and ef bits can be found in the Configuration Setting Command. Bit el enables the internal TX data register. Bit ef
+enables the FIFO mode.
+RFM12B
+8
+GENERAL DEVICE SPECIFICATIONS
+All voltages are referenced to Vss, the potential on the ground reference pin VSS.
+Absolute Maximum Ratings (non-operating)
+Symbol Parameter Min Max Units
+Vdd Positive supply voltage -0.5 6 V
+Vin Voltage on any pin (except RF1 and RF2) -0.5 Vdd+0.5 V
+Voc Voltage on open collector outputs (RF1, RF2) -0.5 Vdd+1.5 (Note 1) V
+Iin Input current into any pin except VDD and VSS -25 25 mA
+ESD Electrostatic discharge with human body model 1000 V
+Tst Storage temperature -55 125
+o
+C
+Tld Lead temperature (soldering, max 10 s) 260
+o
+C
+Recommended Operating Range
+Symbol Parameter Min Max Units
+Vdd Positive supply voltage 2.2 3.8 V
+Voc Voltage range on open collector outputs (RF1, RF2) Vdd-1.5 (Note 2) Vdd+1.5 V
+Top Ambient operating temperature -40 85
+o
+C
+Note 1: The voltage on RF1 and RF2 pins can be higher than the actual Vdd but cannot exceed 7 V.
+Note 2: The actual voltage on RF1 and RF2 pins can be lower than the current Vdd but never should go below 1.2 V.
+RFM12B
+9
+ELECTRICAL SPECIFICATION
+Test Conditions: Top = 27 o
+C; Vdd = Voc = 3.3 V
+DC Characteristics
+Symbol Parameter Conditions/Notes Min Typ Max Units
+433 MHz band 15
+868 MHz band 16Idd_TX_0
+Supply current
+(TX mode, Pout = 0 dBm)
+915 MHz band 17
+mA
+433 MHz band 22 26
+868 MHz band 23 27Idd_TX_PMAX
+Supply current
+(TX mode, Pout = Pmax)
+915 MHz band 24 28
+mA
+433 MHz band 11 13
+868 MHz band 12 14Idd_RX Supply current (RX mode)
+915 MHz band 13 15
+mA
+Ipd Standby current (Sleep mode) All blocks disabled 0.3 1 µA
+Ilb
+Low battery voltage detector current
+consumption
+0.5 1.7 µA
+Iwt Wake-up timer current consumption 1.5 3.5 µA
+Ix Idle current Crystal oscillator on (Note 1) 0.6 1.2 mA
+Vlb Low battery detect threshold Programmable in 0.1 V steps 2.25 3.75 V
+Vlba Low battery detection accuracy ± 3 %
+Vil Digital input low level voltage 0.3·Vdd V
+Vih Digital input high level voltage 0.7·Vdd V
+Iil Digital input current Vil = 0 V -1 1 µA
+Iih Digital input current Vih = Vdd, Vdd = 3.8 V -1 1 µA
+Vol Digital output low level Iol = 2 mA 0.4 V
+Voh Digital output high level Ioh = -2 mA Vdd-0.4 V
+RFM12B
+10
+AC Characteristics (PLL parameters)
+Symbol Parameter Conditions/Notes Min Typ Max Units
+fref PLL reference frequency (Note 2) 9 10 11 MHz
+433 MHz band, 2.5 kHz resolution 430.24 439.75
+868 MHz band, 5.0 kHz resolution 860.48 879.51fo
+Receiver LO/Transmitter carrier
+frequency
+915 MHz band, 7.5 kHz resolution 900.72 929.27
+MHz
+tlock PLL lock time
+Frequency error < 1kHz
+after 10 MHz step
+30 µs
+tstP PLL startup time (Note 10) With a running crystal oscillator 200 300 µs
+AC Characteristics (Receiver)
+Symbol Parameter Conditions/Notes Min Typ Max Units
+mode 0 67
+mode 1 134
+mode 2 200
+mode 3 270
+mode 4 340
+BW Receiver bandwidth
+mode 5 400
+kHz
+BRRX FSK bit rate (Note 10) With internal digital filters 0.6 115.2 kbps
+BRARX FSK bit rate (Note 10) With analog filter 256 kbps
+Pmin Receiver Sensitivity
+BER 10
+-3
+, BW=67 kHz, BR=1.2 kbps,
+868 MHz Band (Note 3)
+-110 dBm
+AFCrange AFC locking range
+δfFSK: FSK deviation in the received
+signal
+0.8·δfFSK
+IIP3inh Input IP3
+In band interferers in high bands
+(868 MHz, 915 MHz)
+-21 dBm
+IIP3outh Input IP3 Out of band interferers l f-fo l > 4 MHz -18 dBm
+IIP3inl IIP3 (LNA –6 dB gain)
+In band interferers in low band (433
+MHz)
+-15 dBm
+IIP3outl IIP3 (LNA –6 dB gain) Out of band interferers l f-fo l > 4 MHz -12 dBm
+Pmax Maximum input power LNA: high gain 0 dBm
+Cin RF input capacitance 1 pF
+RSa RSSI accuracy ± 6 dB
+RSr RSSI range 46 dB
+RSps RSSI power supply dependency
+When input signal level lower than -54
+dBm and greater than -100 dBm
++35 mV/V
+CARSSI Filter capacitor for ARSSI 1 nF
+RSstep RSSI programmable level steps 6 dB
+RSresp DRSSI response time
+Until the RSSI signal goes high after
+the input signal exceeds the
+preprogrammed limit CARRSI = 4.7 nF
+500 µs
+Psp_rx Receiver spurious emission -60 dBm
+RFM12B
+11
+Symbol Parameter Conditions/Notes Min Typ Max Units
+IOUT Open collector output DC current Programmable 0.5 6 mA
+In 433 MHz band 7
+Pmax_50
+Max. output power delivered to 50
+Ohm load over a suitable matching
+network (Note 4) In 868 MHz / 915 MHz bands 5
+dBm
+In 433 MHz band with monopole antenna
+with matching network (Note 4)
+7
+P
+Max. EIRP with suitable selected
+PCB antenna (Note 6)
+In 868 MHz / 915 MHz bands (Note 5) 7
+dBm
+Pout Typical output power Selectable in 2.5 dB steps (Note 7) Pmax-17.5 Pmax dBm
+At max power 50 Ohm load (Note 4) -55
+P
+Spurious emission
+l f-fsp l > 1 MHz With PCB antenna (Note 5) -60
+dBc
+At max power 50 Ohm load (Note 4) -35
+Pharm Harmonic suppression
+With PCB antenna (Note 5) -42
+dBc
+In 433 MHz band 2 2.6 3.2
+C
+Output capacitance (set by the
+automatic antenna tuning circuit) In 868 MHz / 915 MHz bands 2.1 2.7 3.3
+pF
+In 433 MHz band 13 15 17
+Q
+Quality factor of the output
+capacitance In 868 MHz / 915 MHz bands 8 10 12
+100 kHz from carrier, in 868 MHz band -80
+Lout Output phase noise
+1 MHz from carrier, in 868 MHz band -103
+dBc/Hz
+BRTX FSK bit rate Via internal TX data register 172 kbps
+BRATX FSK bit rate TX data connected to the FSK input 256 kbps
+dffsk FSK frequency deviation Programmable in 15 kHz steps 15 240 kHz
+AC Characteristics (Transmitter)
+max_ant
+sp
+o
+o
+AC Characteristics (Turn-on/Turnaround timings)
+Symbol Parameter Conditions/Notes Min Typ Max Units
+tsx Crystal oscillator startup time
+Default capacitance bank setting, crystal
+ESR < 50 Ohm (Note 9). Crystal load
+capacitance = 16 pF.
+2 7 ms
+Ttx_XTAL_ON Transmitter turn-on time
+Synthesizer off, crystal oscillator on with
+10 MHz step
+250 µs
+Trx_XTAL_ON Receiver turn-on time
+Synthesizer off, crystal oscillator on with
+10 MHz step
+250 µs
+Ttx_rx_SYNT_ON Transmitter – Receiver turnover time
+Synthesizer and crystal oscillator on
+during TX/RX change with 10 MHz step
+150 µs
+Trx_tx_SYNT_ON Receiver – Transmitter turnover time
+Synthesizer and crystal oscillator on
+during RX/TX change with 10 MHz step
+150 µs
+AC Characteristics (Others)
+Symbol Parameter Conditions/Notes Min Typ Max Units
+Cxl
+Crystal load capacitance,
+see crystal selection guide
+Programmable in 0.5 pF steps, tolerance
+± 10%
+8.5 16 pF
+tPOR Internal POR timeout
+After Vdd has reached 90% of final value
+(Note 8)
+100 ms
+tPBt Wake-up timer clock accuracy
+Crystal oscillator must be enabled to
+ensure proper calibration at the start up.
+(Note 9)
+± 10 %
+CinD Digital input capacitance 2 pF
+tr, tf Digital output rise/fall time 15 pF pure capacitive load 10 ns
+RFM12B
+12
+Note 1: Measured with disabled clock output buffer
+Note 2: Not using a 10 MHz crystal is allowed but not recommended because all crystal referred timing and frequency parameters
+will change accordingly
+Note 3: See the BER diagrams in the measurement results section for detailed information
+Note 4: See reference design with 50 Ohm Matching Network for details
+Note 5: See reference design with Resonant PCB Antenna (BIFA) for details
+Note 6: Optimal antenna admittance/impedance:
+RFM12B Yantenna [mS] Zantenna [Ohm] Lantenna [nH]
+433 MHz 2 – j5.9 52 + j152 62
+868 MHz 1.2 - j11.9 7.8 + j83 15.4
+915 MHz 1.49 - j12.8 9 + j77 13.6
+Note 7: Adjustable in 8 steps
+Note 8: During the Power-On Reset period, commands are not accepted by the chip. In case of software reset (see Wake-Up Timer
+Command) the reset timeout is 0.25ms typical.
+Note 9: The crystal oscillator start up time strongly depends on the capacitance seen by the oscillator. Low capacitance and low
+ESR crystal is recommended with low parasitic PCB layout design.
+Note 10: By design
+RFM12B
+13
+CONTROL INTERFACE
+Commands to the transmitter are sent serially. Data bits on pin SDI are shifted into the device upon the rising edge of the clock on
+pin SCK whenever the chip select pin nSEL is low. When the nSEL signal is high, it initializes the serial interface. All commands
+consist of a command code, followed by a varying number of parameter or data bits. All data are sent MSB first (e.g. bit 15 for a 16-
+bit command). Bits having no influence (don’t care) are indicated with X. Special care must be taken when the microcontroller’s built-
+in hardware serial port is used. If the port cannot be switched to 16-bit mode then a separate I/O line should be used to control the
+nSEL pin to ensure the low level during the whole duration of the command or a software serial control interface should be
+implemented. The Power-On Reset (POR) circuit sets default values in all control and command registers.
+The receiver will generate an interrupt request (IT) for the microcontroller - by pulling the nIRQ pin low - on the following events:
+• The TX register is ready to receive the next byte (RGIT)
+• The RX FIFO has received the preprogrammed amount of bits (FFIT)
+• Power-on reset (POR)
+• RX FIFO overflow (FFOV) / TX register underrun (RGUR)
+• Wake-up timer timeout (WKUP)
+• Negative pulse on the interrupt input pin nINT (EXT)
+• Supply voltage below the preprogrammed value is detected (LBD)
+FFIT and FFOV are applicable when the RX FIFO is enabled. RGIT and RGUR are applicable only when the TX register is enabled. To
+identify the source of the IT, the status bits should be read out.
+Timing Specification
+Symbol Parameter Minimum value [ns]
+tCH Clock high time 25
+tCL Clock low time 25
+tSS Select setup time (nSEL falling edge to SCK rising edge) 10
+tSH Select hold time (SCK falling edge to nSEL rising edge) 10
+tSHI Select high time 25
+tDS Data setup time (SDI transition to SCK rising edge) 5
+tDH Data hold time (SCK rising edge to SDI transition) 5
+tOD Data delay time 10
+Timing Diagram
+tSS
+tSHI
+nSEL
+tCH tCL
+tOD
+tSH
+SCK
+tDS
+tDH
+SDI BIT 15 BIT 14 BIT 13 BIT 8 BIT 7 BIT 1 BIT 0
+SDO FFIT FFOV CRL AT S OFFS(0) FIFO OUT
+RFM12B
+14
+Control Commands
+Control Command Related Parameters/Functions Related control bits
+1 Configuration Setting Command
+Frequency band, crystal oscillator load capacitance,
+RX FIFO and TX register enable
+el, ef, b1 to b0, x3 to x0
+2 Power Management Command
+Receiver/Transmitter mode change, synthesizer,
+crystal oscillator, PA, wake-up timer, clock output
+enable
+er, ebb, et, es, ex, eb, ew, dc
+3 Frequency Setting Command Frequency of the local oscillator/carrier signal f11 to f0
+4 Data Rate Command Bit rate cs, r6 to r0
+5 Receiver Control Command
+Function of pin 16, Valid Data Indicator, baseband
+bandwidth, LNA gain, digital RSSI threshold
+p16, d1 to d0, i2 to i0, g1 to g0, r2
+to r0
+6 Data Filter Command Data filter type, clock recovery parameters al, ml, s, f2 to f0
+7 FIFO and Reset Mode Command
+Data FIFO IT level, FIFO start control, FIFO enable
+and FIFO fill enable, POR sensitivity
+f3 to f0, sp, ff, al, dr
+8 Synchron Pattern Command Synchron pattern b7 to b0
+9 Receiver FIFO Read Command RX FIFO read
+10 AFC Command AFC parameters a1 to a0, rl1 to rl0, st, fi, oe, en
+11 TX Configuration Control Command Modulation parameters, output power mp, m3 to m0, p2 to p0
+12 PLL Setting Command CLK out buffer speed, dithering, PLL bandwidth ob1 to ob0, ddit, dly, bw0
+13 Transmitter Register Write Command TX data register write t7 to t0
+14 Wake-Up Timer Command Wake-up time period r4 to r0, m7 to m0
+15 Low Duty-Cycle Command Enable and set low duty-cycle mode d6 to d0, en
+16
+Low Battery Detector and
+Microcontroller Clock Divider
+Command
+LBD voltage and microcontroller clock division ratio d2 to d0, v3 to v0
+17 Status Read Command Status bit readout
+In general, setting the given bit to one will activate the related function. In the following tables, the POR column shows the default
+values of the command registers after power-on.
+Control Register Default Values
+Control Register Power-On Reset Value
+1 Configuration Setting Command 8008h
+2 Power Management Command 8208h
+3 Frequency Setting Command A680h
+4 Data Rate Command C623h
+5 Receiver Control Command 9080h
+6 Data Filter Command C22Ch
+7 FIFO and Reset Mode Command CA80h
+8 Synchron Pattern Command CED4h
+9 Receiver FIFO Read Command B000h
+10 AFC Command C4F7h
+11 TX Configuration Control Command 9800h
+12 PLL Setting Command CC77h
+13 Transmitter Register Write Command B8AAh
+14 Wake-Up Timer Command E196h
+15 Low Duty-Cycle Command C80Eh
+16 Low Battery Detector and Microcontroller Clock Divider Command C000h
+17 Status Read Command 0000h
+RFM12B
+15
+x3 x2 x1 x0 Crystal Load Capacitance [pF]
+0 0 0 0 8.5
+0 0 0 1 9.0
+0 0 1 0 9.5
+0 0 1 1 10.0
+…
+1 1 1 0 15.5
+1 1 1 1 16.0
+
+Description of the Control Commands
+
+1. Configuration Setting Command
+
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 0 0 0 0 0 0 0 el ef b1 b0 x3 x2 x1 x0 8008h
+Bit el enables the internal data register.
+Bit ef enables the FIFO mode. If ef = 0 then DATA (pin 6) and DCLK (pin 7) are used for data and data clock output.
+b1 b0 Frequency Band
+0 0 Reserved
+0 1 433
+1 0 868
+1 1 915
+
+2. Power Management Command
+
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 0 0 0 0 0 1 0 er ebb et es ex eb ew dc 8208h
+Bit Function of the control bit Related blocks
+er Enables the whole receiver chain RF front end, baseband, synthesizer, crystal oscillator
+ebb The receiver baseband circuit can be separately switched on Baseband
+et
+Switches on the PLL, the power amplifier, and starts the
+transmission (If TX register is enabled)
+Power amplifier, synthesizer, crystal oscillator
+es Turns on the synthesizer Synthesizer
+ex Turns on the crystal oscillator Crystal oscillator
+eb Enables the low battery detector Low battery detector
+ew Enables the wake-up timer Wake-up timer
+dc Disables the clock output (pin 8) Clock output buffer
+The ebb, es, and ex bits are provided to optimize the TX to RX or RX to TX turnaround time.
+The RF frontend consist of the LNA (low noise amplifier) and the mixer. The synthesizer block has two main components: the VCO
+and the PLL. The baseband section contains the baseband amplifier, low pass filter, limiter and the I/Q demodulator.
+To decrease TX/RX turnaround time, it is possible to leave the baseband section powered on. Switching to RX mode means disabling
+the PA and enabling the RF frontend. Since the baseband block is already on, the internal startup calibration will not be performed,
+the turnaround time will be shorter.
+The synthesizer also has an internal startup calibration procedure. If quick RX/TX switching needed it may worth to leave this block
+on. Enabling the transmitter using the et bit will turn on the PA, the synthesizer is already up and running. The power amplifier almost
+immediately produces TX signal at the output.
+The crystal oscillator provides reference signal to the RF synthesizer, the baseband circuits and the digital signal processor part.
+When the receiver or the transmitter part frequently used, it is advised to leave the oscillator running because the crystal might need
+a few milliseconds to start. This time mainly depends on the crystal parameters.
+It is important to note that leaving blocks unnecessary turned on can increase the current consumption thus decreasing the battery
+life.
+RFM12B
+16
+ta
+clear TX latch
+TX latch
+Digital signal
+processing
+Logic connections between power control bits:
+enable
+power amplifier
+et
+Edge
+detector
+start TX
+enable
+power amplifier
+enable
+RF front end
+clear TX latch
+enable
+es RF synthesizer
+enable
+er RF front end
+enable
+RF synthesizer
+start TX
+VCO and
+PLL
+ebb
+enable baseband
+circuits
+enable
+crystal oscillator Crystal
+oscillator I/Q
+demod
+enable baseband
+circuits
+enable crys l
+oscillator
+ex
+clock and data out
+Note:
+• If both et and er bits are set the chip goes to receive mode.
+• FSK / nFFS input are equipped with internal pull-up resistor. To achieve minimum current consumption do not pull this input
+to logic low in sleep mode.
+• To enable the RF synthesizer, the crystal oscillator must be turned on
+• To turn on the baseband circuits, the RF synthesizer (and this way the crystal oscillator) must be enabled.
+• Setting the er bit automatically turns on the crystal oscillator, the synthesizer, the baseband circuits and the RF fronted.
+• Setting the et bit automatically turns on the crystal oscillator, the synthesizer and the RF power amplifier.
+Clock tail feature: When the clock output (pin 8) used to provide clock signal for the microcontroller (dc bit is set to 0), it is possible
+to use the clock tail feature. This means that the crystal oscillator turn off is delayed, after issuing the command (clearing the ex bit)
+192 more clock pulses are provided. This ensures that the microcontroller can switch itself to low power consumption mode. In order
+to use this feature, a Status Read Command must be issued before the ex bit set to zero. If status read was not performed then the
+clock output shuts down immediately leaving the microcontroller in unknown state.
+Automatic crystal oscillator enable/disable feature: When an interrupt occurs, the crystal oscillator automatically turns on –
+regardless to the setting of the ex bit – to supply clock signal to the microcontroller. After clearing all interrupts by handling them
+properly (see the Interrupt Handling section) and performing Status Read Command, the crystal oscillator is automatically turned
+off. The clock tail feature provides enough clock pulses for the microcontroller to go to low power mode. Due to this automatic
+feature, it is not possible to turn off the crystal by clearing the ex bit if any interrupt is active. For example, after power on the POR
+interrupt must be cleared by a status read then writing zero to the ex bit will put the part into sleep mode. Very important to clear all
+interrupts before turning the ex bit off because the extra current required by running crystal oscillator can shorten the battery life
+significantly.
+Disabling the clock output (bit dc=1) turns off both the clock tail and the automatic crystal oscillator enable/disable feature, only the
+ex bit controls the crystal oscillator (supposing that both the er and et bits are cleared), the interrupts have no effect on it.
+RFM12B
+17
+Band [MHz] C1 C2
+433 1 43
+868 2 43
+915 3 30
+3. Frequency Setting Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 0 1 0 f11 f10 f9 f8 f7 f6 f5 f4 f3 f2 f1 f0 A680h
+The 12-bit parameter F (bits f11 to f0) should be in the range
+of 96 and 3903. When F value sent is out of range, the
+previous value is kept. The synthesizer center frequency f0
+can be calculated as:
+f0 = 10 · C1 · (C2 + F/4000) [MHz]
+The constants C1 and C2 are determined by
+the selected band as:
+Band Minimum Frequency Maximum Frequency PLL Frequency Step
+433 MHz 430.2400 MHz 439.7575 MHz 2.5 kHz
+868 MHz 860.4800 MHz 879.5150 MHZ 5.0 kHz
+915 MHz 900.7200 MHz 929.2725 MHz 7.5 kHz
+4. Data Rate Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 0 1 1 0 cs r6 r5 r4 r3 r2 r1 r0 C623h
+The actual bit rate in transmit mode and the expected bit rate of the received data stream in receive mode is determined by the 7-bit
+parameter R (bits r6 to r0) and bit cs.
+BR = 10000 / 29 / (R+1) / (1+cs · 7) [kbps]
+In the receiver set R according to the next function:
+R= (10000 / 29 / (1+cs · 7) / BR) – 1, where BR is the expected bit rate in kbps.
+Apart from setting custom values, the standard bit rates from 600 bps to 115.2 kbps can be approximated with small error.
+Data rate accuracy requirements:
+Clock recovery in slow mode: ΔBR/BR < 1/(29 · Nbit) Clock recovery in fast mode: ΔBR/BR < 3/(29 · Nbit)
+BR is the bit rate set in the receiver and ΔBR is the bit rate difference between the transmitter and the receiver. Nbit is the maximum
+number of consecutive ones or zeros in the data stream. It is recommended for long data packets to include enough 1/0 and 0/1
+transitions, and to be careful to use the same division ratio in the receiver and in the transmitter.
+
+5. Receiver Control Command
+
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 0 0 1 0 p16 d1 d0 i2 i1 i0 g1 g0 r2 r1 r0 9080h
+Bit 10 (p16): Pin 16 function select
+p16 Function of pin 16
+0 Interrupt input
+1 VDI output
+RFM12B
+18
+Bits 9-8 (d1 to d0): VDI (valid data indicator) signal response time setting:
+d1 d0 Response
+0 0 Fast
+0 1 Medium
+1 0 Slow
+1 1 Always on
+VDI Logic Diagram:
+CR_LOCK
+DRSSI
+DQD
+DQD
+d0
+d1
+FAST
+MEDIUM
+SLOW
+LOGIC HIGH
+MUX
+SEL0
+SEL1
+IN0
+IN1
+Y
+IN2
+IN3
+VDI
+DRSSI
+DQD
+CR_LOCK
+SET Q
+er *
+CLR
+R/S FF
+CLR
+Note:
+* For details see the Power Management Command
+Slow mode: The VDI signal will go high only if the DRSSI, DQD and the CR_LOCK (Clock Recovery Locked) signals present at the same
+time. It stays high until any of the abovementioned signals present; it will go low when all the three input signals are low.
+Medium mode: The VDI signal will be active when the CR_LOCK signal and either the DRSSI or the DQD signal is high. The valid data
+indicator will go low when either the CR_LOCK gets inactive or both of the DRSSI or DQD signals go low.
+Fast mode: The VDI signal follows the level of the DQD signal.
+Always mode: VDI is connected to logic high permanently. It stays always high independently of the receiving parameters.
+Bits 7-5 (i2 to i0): Receiver baseband bandwidth (BW) select:
+i2 i1 i0 BW [kHz]
+0 0 0 Reserved
+0 0 1 400
+0 1 0 340
+0 1 1 270
+1 0 0 200
+1 0 1 134
+1 1 0 67
+1 1 1 Reserved
+RFM12B
+19
+Bits 4-3 (g1 to g0): LNA gain select:
+g1 g0 Gain relative to maximum [dB]
+0 0 0
+0 1 -6
+1 0 -14
+1 1 -20
+Bits 2-0 (r2 to r0): RSSI detector threshold:
+r2 r1 r0 RSSIsetth
+0 0 0 -103
+0 0 1 -97
+0 1 0 -91
+0 1 1 -85
+1 0 0 -79
+1 0 1 -73
+1 1 0 Reserved
+1 1 1 Reserved
+The RSSI threshold depends on the LNA gain, the real RSSI threshold can be calculated:
+RSSIth=RSSIsetth+GLNA
+6. Data Filter Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 0 0 1 0 al ml 1 s 1 f2 f1 f0 C22Ch
+Bit 7 (al): Clock recovery (CR) auto lock control
+1: auto mode: the CR starts in fast mode, after locking it switches to slow mode. Bit 6 (ml) has no effect.
+0: manual mode, the clock recovery mode is set by Bit 6 (ml)
+Bit 6 (ml): Clock recovery lock control
+1: fast mode, fast attack and fast release (4 to 8-bit preamble (1010...) is recommended)
+0: slow mode, slow attack and slow release (12 to 16-bit preamble is recommended)
+Using the slow mode requires more accurate bit timing (see Data Rate Command).
+Bit 4 (s): Select the type of the data filter:
+s Filter Type
+0 Digital filter
+1 Analog RC filter
+Digital: This is a digital realization of an analog RC filter followed by a comparator with hysteresis. The time
+constant is automatically adjusted to the bit rate defined by the Data Rate Command.
+Note: Bit rate cannot exceed 115 kpbs in this mode.
+Analog RC filter: The demodulator output is fed to pin 7 over a 10 kOhm resistor. The filter cut-off frequency is set
+by the external capacitor connected to this pin and VSS.
+The table shows the optimal filter capacitor values for different data rates
+Data Rate [kbps] 1.2 2.4 4.8 9.6 19.2 38.4 57.6 115.2 256
+Filter Capacitor Value 12 nF 8.2 nF 6.8 nF 3.3 nF 1.5 nF 680 pF 270 pF 150 pF 100 pF
+Note: If analog RC filter is selected the internal clock recovery circuit and the FIFO cannot be used.
+RFM12B
+20
+Bits 2-0 (f2 to f0): DQD threshold parameter.
+The Data Quality Detector is a digital processing part of the radio, connected to the demodulator - it is an indicator
+reporting the reception of an FSK modulated RF signal. It will work every time the receiver is on. Setting this
+parameter defines how clean incoming data stream would be stated as good data (valid FSK signal).
+If the internally calculated data quality value exceeds the DQD threshold parameter for five consecutive data bits
+for both the high and low periods, then the DQD signal goes high.
+The DQD parameter in the Data Filter Command should be chosen according to the following rules:
+The DQD parameter can be calculated with the following formula:
+DQDpar = 4 x (deviation – TX-RXoffset) / bit rate
+It should be larger than 4 because otherwise noise might be treated as a valid FSK signal
+The maximum value is 7.
+
+7. FIFO and Reset Mode Command
+
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 1 0 1 0 f3 f2 f1 f0 sp al ff dr CA80h
+Bits 7-4 (f3 to f0): FIFO IT level. The FIFO generates IT when the number of received data bits reaches this level.
+Bit 3 (sp): Select the length of the synchron pattern:
+sp Byte1 Byte0 (POR) Synchron Pattern (Byte1+Byte0)
+0 2Dh D4h 2DD4h
+1 Not used D4h D4h
+Note: The synchron pattern consists of one or two bytes depending on the sp bit. Byte1 is fixed 2Dh, Byte0 can be programmed by
+the Synchron Pattern Command.
+Bit 2 (al): Set the input of the FIFO fill start condition:
+al FIFO fill start condition
+0 Synchron pattern
+1 Always fill
+RFM12B
+21
+Bit 1 (ff): FIFO fill will be enabled after synchron pattern reception. The FIFO fill stops when this bit is cleared.
+Bit 0 (dr): Disables the highly sensitive RESET mode.
+dr Reset mode Reset triggered when
+0 Sensitive reset Vdd below 1.6V, Vdd glitch greater than 600mV
+1 Non-sensitive reset Vdd below 250mV
+Note: To restart the synchron pattern recognition, bit 1 (ef, FIFO fill enable) should be cleared and set.
+8. Synchron Pattern Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 1 1 1 0 b7 b6 b5 b4 b3 b2 b1 b0 CED4h
+The Byte0 of the synchron pattern (see FIFO and Reset Mode command) can be reprogrammed by B <b7:b0>.
+9. Receiver FIFO Read Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 B000h
+With this command, the controller can read 8 bits from the receiver FIFO. Bit 6 (ef) must be set in Configuration Setting Command
+.
+Note: During FIFO access fSCK cannot be higher than fref /4, where fref is the crystal oscillator frequency. When the duty-cycle of the
+clock signal is not 50 % the shorter period of the clock pulse width should be at least 2/fref.
+
+10. AFC Command
+
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 0 1 0 0 a1 a0 rl1 rl0 st fi oe en C4F7h
+Bit 7-6 (a1 to a0): Automatic operation mode selector:
+a1 a0 Operation mode
+0 0 Auto mode off (Strobe is controlled by microcontroller)
+0 1 Runs only once after each power-up
+1 0 Keep the foffset only during receiving (VDI=high)
+1 1 Keep the foffset value independently from the state of the VDI signal
+RFM12B
+22
+rl1 rl0 Max deviation
+0 0 No restriction
+0 1 +15 fres to -16 fres
+1 0 +7 fres to -8 fres
+1 1 +3 fres to -4 fres
+Bit 5-4 (rl1 to rl0): Range limit. Limits the value of the frequency offset register to the next values:
+fres:
+433 MHz bands: 2.5 kHz
+868 MHz band: 5 kHz
+915 MHz band: 7.5 kHz
+Bit 3 (st): Strobe edge, when st goes to high, the actual latest calculated frequency error is stored into the offset register of
+the AFC block.
+Bit 2 (fi): Switches the circuit to high accuracy (fine) mode. In this case, the processing time is about twice as long, but the
+measurement uncertainty is about half.
+Bit 1 (oe): Enables the frequency offset register. It allows the addition of the offset register to the frequency control word of
+the PLL.
+Bit 0 (en): Enables the calculation of the offset frequency by the AFC circuit.
+In manual mode, the strobe signal is provided by the microcontroller. One measurement cycle (and strobe) signal can compensate
+about 50-60% of the actual frequency offset. Two measurement cycles can compensate 80%, and three measurement cycles can
+compensate 92%. The ATGL bit in the status register can be used to determine when the actual measurement cycle is finished.
+In automatic operation mode (no strobe signal is needed from the microcontroller to update the output offset register) the AFC circuit
+is automatically enabled when the VDI indicates potential incoming signal during the whole measurement cycle and the circuit
+measures the same result in two subsequent cycles.
+Without AFC the transmitter and the receiver needs to be tuned precisely to the same frequency. RX/TX frequency offset can lower
+the range. The units must be adjusted carefully during production, stable, expensive crystal must be used to avoid drift or the output
+power needs to be increased to compensate yield loss.
+The AFC block will calculate the TX-RX offset. This value will be used to pull the RX synthesizer close to the frequency of the
+transmitter. The main benefits of the automatic frequency control: cheap crystal can be used, the temperature or aging drift will not
+cause range loss and no production alignment needed.
+RFM12B
+23
+p2 p1 p0 Relative Output Power [dB]
+0 0 0 0
+0 0 1 -2.5
+0 1 0 -5
+0 1 1 -7.5
+1 0 0 -10
+1 0 1 -12.5
+1 1 0 -15
+1 1 1 -17.5
+There are four operation modes:
+1. (a1=0, a0=0) Automatic operation of the AFC is off. Strobe bit can be controlled by the microcontroller.
+2. (a1=0, a0=1) The circuit measures the frequency offset only once after power up. This way, extended TX-RX distance can be
+achieved. In the final application, when the user inserts the battery, the circuit measures and compensates for the frequency offset
+caused by the crystal tolerances. This method allows for the use of cheaper quartz in the application and provides protection against
+tracking an interferer.
+3. (a1=1, a0=0) The frequency offset is calculated automatically and the center frequency is corrected when the VDI is high. The
+calculated value is dropped when the VDI goes low. To improvethe efficiency of the AFC calculation two methods are recommended:
+a. The transmit package should start with a low effective baud rate pattern (i.e.: 00110011) because it is easier to receive. The
+circuit automatically measures the frequency offset during this initial pattern and changes the receiving frequency accordingly.
+The further part of the package will be received by the corrected frequency settings.
+b. The transmitter sends the first part of the packet with a step higher deviation than required during normal operation to ease
+the receiving. After the frequency shift was corrected, the deviation can be reduced.
+In both cases (3a and 3b), when the VDI indicates poor receiving conditions (VDI goes low), the output register is automatically
+cleared. Use this “drop offset” mode when the receiver communicates with more than one transmitter.
+4. (a1=1, a0=1) It is similar to mode 3, but suggested to use when a receiver operates with only one transmitter. After a complete
+measuring cycle, the measured value is kept independently of the state of the VDI signal. When the receiver is paired with only one
+transmitter, it is possible to use this “keep offset” mode. In this case, the DRSSI limit should be selected carefully to minimize the
+range hysteresis.
+
+11. TX Configuration Control Command
+
+Bit 15 14 13 12 11 10 9  8  7  6  5  4 3  2  1 0  POR
+     1  0  0  1  1  0 0 mp m3 m2 m1 m0 0 p2 p1 p0 9800h
+
+Bits 8-4 (mp, m3 to m0): FSK modulation parameters:
+The resulting output frequency can be calculated as:
+fout = f0 + (-1)SIGN · (M + 1) · (15 kHz) Pout
+where:
+f0 is the channel center frequency (see the
+Frequency Setting Command)
+M is the four bit binary number <m3 : m0>
+SIGN = (mp) XOR FSK
+df fsk df fsk
+f
+f out
+mp=0 and FSK=0
+or
+0
+mp=0 and FSK=1
+or
+Bits 2-0 (p2 to p0): Output power: mp=1 and FSK=1 mp=1 and FSK=0
+Note: FSK represents the value of the actual data bit.
+Note: The output power given in the table is relative to the
+maximum available power, which depends on the
+actual antenna impedance. (See: Antenna
+Application Note: IA ISM-AN1)
+RFM12B
+24
+12. PLL Setting Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 1 1 0 0 0 ob1 ob0 1 dly ddit 1 bw0 CC77h
+Bits 6-5 (ob1-ob0): Microcontroller output clock buffer rise and fall time control. The ob1-ob0 bits are changing the output drive
+current of the CLK pin. Higher current provides faster rise and fall times but can cause interference.
+ob1 ob0 Selected µC CLK frequency
+1 1 5 or 10 MHz (recommended)
+1 0 3.3 MHz
+0 X 2.5 MHz or less
+Note: Needed for optimization of the RF performance. Optimal settings can vary according to the external load capacitance.
+Bit 3 (dly): Switches on the delay in the phase detector when this bit is set.
+Bit 2 (ddit):When set, disables the dithering in the PLL loop.
+Bit 0 (bw0): PLL bandwidth can be set for optimal TX RF performance.
+bw0 Max bit rate [kbps] Phase noise at 1MHz offset [dBc/Hz]
+0 86.2 -107
+1 256 -102
+Note: POR default settings of the register were carefully selected to cover almost all typical applications. When changing these
+values, examine thoroughly the output RF spectrum.
+13. Transmitter Register Write Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 0 1 1 1 0 0 0 t7 t6 t5 t4 t3 t2 t1 t0 B8AAh
+With this command, the controller can write 8 bits (t7 to t0) to the transmitter data register. Bit 7 (el) must be set in Configuration
+Setting Command.
+Multiple Byte Write with Transmit Register Write Command:
+nSEL
+SCK
+SDI TX BYTE1 TX BYTE2 TX BYTEn
+T r a n s m i t R e g i s t e r W r i t e
+command
+SDO
+(REGISTER IT
+in TX mode*)
+Note: *The transceiver is in transmit (TX) mode when bit er is cleared using the Power Management Command
+Note: Alternately the transmit register can be directly accessed by nFFS (pin6).
+RFM12B
+25
+14. Wake-Up Timer Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 1 r4 r3 r2 r1 r0 m7 m6 m5 m4 m3 m2 m1 m0 E196h
+The wake-up timeperiod can be calculated by (m7 to m0) and (r4 to r0):
+Twake-up = 1.03 · M · 2R + 0.5 [ms]
+Note:
+• For continual operation, the ew bit should be cleared and set at the end of every cycle.
+• For future compatibility, use R in a range of 0 and 29.
+15. Low Duty-Cycle Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 1 0 0 0 d6 d5 d4 d3 d2 d1 d0 en C80Eh
+With this command, autonomous low duty-cycle operation can be set in order to decrease the average power consumption in receive
+mode.
+Bits 7-1 (d6-d0): The duty-cycle can be calculated by using (d6 to d0) and M. (M is parameter in a Wake-Up Timer Command, see
+above). The time cycle is determined by the Wake-Up Timer Command.
+duty-cycle= (D · 2 +1) / M · 100%
+Bit 0 (en): Enables the low duty-cycle Mode. Wake-up timer interrupt is not generated in this mode.
+Note: In this operation mode, bit er must be cleared and bit ew must be set in the Power Management Command.
+In low duty-cycle mode the receiver periodically wakes up for a short period of time and checks if there is a valid FSK transmission in
+progress. FSK transmission is detected in the frequency range determined by Frequency Setting Command plus and minus the
+baseband filter bandwidth determined by the Receiver Control Command. This on-time is automatically extended while DQD
+indicates good received signal condition.
+When calculating the on-time take into account:
+- the crystal oscillator, the synthesizer and the PLL needs time to start, see the AC Characteristics (Turn-on/Turnaround
+timings)
+- depending on the DQD parameter, the chip needs to receive a few valid data bits before the DQD signal indicates good
+signal condition (Data Filter Command)
+Choosing too short on-time can prevent the crystal oscillator from starting or the DQD signal will not go high even when the received
+signal has good quality.
+There is an application proposal. The RFM12B is configured to work in FIFO mode. The chip periodically wakes up and switches to
+receiving mode. If valid FSK data received, the chip sends an interrupt to the microcontroller and continues filling the RX FIFO. After
+the transmission is over and the FIFO is read out completely and all other interrupts are cleared, the chip goes back to low power
+consumption mode.
+RFM12B
+26
+lb
+Application Proposal for LPDM (Low Power Duty-Cycle Mode) Receivers:
+16. Low Battery Detector and Microcontroller Clock Divider Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+1 1 0 0 0 0 0 0 d2 d1 d0 0 v3 v2 v1 v0 C000h
+The 4-bit parameter (v3 to v0) represents the value V, which defines the threshold voltage Vlb of the detector:
+V = 2.25 + V · 0.1 [V]
+Clock divider configuration:
+d2 d1 d0
+Clock Output
+Frequency [MHz]
+0 0 0 1
+0 0 1 1.25
+0 1 0 1.66
+0 1 1 2
+1 0 0 2.5
+1 0 1 3.33
+1 1 0 5
+1 1 1 10
+The low battery detector and the clock output can be enabled or disabled by bits eb and dc, respectively, using the Power
+Management Command.
+RFM12B
+27
+17. Status Read Command
+Bit 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 POR
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0000h
+The read command starts with a zero, whereas all other control commands start with a one. If a read command is identified, the
+status bits will be clocked out on the SDO pin as follows:
+Status Register Read Sequence with FIFO Read Example:
+Bit Name Function
+RGIT TX register is ready to receive the next byte (Can be cleared by Transmitter Register Write Command)
+FFIT
+The number of data bits in the RX FIFO has reached the pre-programmed limit (Can be cleared by any of the
+FIFO read methods)
+POR Power-on reset (Cleared after Status Read Command)
+RGUR TX register under run, register over write (Cleared after Status Read Command)
+FFOV RX FIFO overflow (Cleared after Status Read Command)
+WKUP Wake-up timer overflow (Cleared after Status Read Command)
+EXT Logic level on interrupt pin (pin 16) changed to low (Cleared after Status Read Command)
+LBD Low battery detect, the power supply voltage is below the pre-programmed limit
+FFEM FIFO is empty
+ATS Antenna tuning circuit detected strong enough RF signal
+RSSI The strength of the incoming signal is above the pre-programmed limit
+DQD Data quality detector output
+CRL Clock recovery locked
+ATGL Toggling in each AFC cycle
+OFFS(6) MSB of the measured frequency offset (sign of the offset value)
+OFFS(3) -OFFS(0) Offset value to be added to the value of the frequency control parameter (Four LSB bits)
+Note: In order to get accurate values the AFC has to be disabled during the read by clearing the en bit in the AFC Control Command.
+The AFC offset value (OFFS bits in the status word) is represented as a two’s complement number. The actual frequency
+offset can be calculated as the AFC offset value multiplied by the current PLL frequency step (see the Frequency Setting
+Command).
+RFM12B
+28
+
+INTERRUPT HANDLING
+
+In order to achieve low power consumption there is an advanced event handling circuit implemented. The device has a very low
+power consumption mode, so called sleep mode. In this mode only a few parts of the circuit are working. In case of an event, the
+device wakes up, switches into active mode and an interrupt signal generated on the nIRQ pin to indicate the changed state to the
+microcontroller. The cause of the interrupt can be determined by reading the status word of the device (see Status Read Command).
+
+Several interrupt sources are available:
+
+• RGIT – TX register empty interrupt: This interrupt generated when the transmit register is empty. Valid only when the el
+(enable internal data register) bit is set in the Configuration Setting Command, and the transmitter is enabled in the Power
+Management command.
+
+• FFIT – the number of bits in the RX FIFO reached the preprogrammed level: When the number of received data bits in the
+receiver FIFO reaches the threshold set by the f3…f0 bits of the FIFO and Reset Mode Command an interrupt is fired.
+Valid only when the ef (enable FIFO mode) bit is set in the Configuration Setting Command and the receiver is enabled in the
+Power Management Command.
+
+• POR – power on reset interrupt: An interrupt generated when the change on the VDD line triggered the internal reset circuit or
+a software reset command was issued. For more details, see the Reset Modes section.
+
+• RGUR – TX register under run: The automatic baud rate generator finished the transmission of the byte in the TX register
+before the register write occurred. Valid only when the el (enable internal data register) bit is set in the Configuration Setting
+Command and the transmitter is enabled in the Power Management command.
+
+• FFOV – FIFO overflow: There are more bits received than the capacity of the FIFO (16 bits). Valid only when the ef (enable
+FIFO mode) bit is set in the Configuration Setting Command and the receiver is enabled in the Power Management
+command
+
+• WKUP – wake-up timer interrupt: This interrupt event occurs when the time specified by the Wake-Up Timer Command has
+elapsed. Valid only when the ew bit is set in the Power Management Command.
+• EXT – external interrupt: Follows the level of the nINT pin if it is configured as an external Interrupt pin in the Receiver Control
+Command.
+
+• LBD – low battery detector interrupt: Occurs when the VDD goes below the programmable low battery detector threshold level
+(v3…v0 bits in the Low Battery and Microcontroller Clock Divider Command). Valid only when the eb (enable low battery
+detector) bit is set in the Power Management Command.
+If any of the sources becomes active, the nIRQ pin will change to logic low level, and the corresponding bit in the status byte will be
+HIGH.
+
+Clearing an interrupt actually implies two things:
+• Releasing the nIRQ pin to return to logic high
+• Clearing the corresponding bit in the status byte
+This may be completed with the following interrupt sources:
+• RGIT: both the nIRQ pin and status bit remain active until the register is written (if under-run does not occur until the register
+write), or the transmitter and the TX latch are switched off.
+• FFIT: both the nIRQ pin and status bit remain active until the FIFO is read (a FIFO IT threshold number of bits have been
+read), the receiver is switched off, or the RX FIFO is switched off.
+• POR: both the nIRQ pin and status bit can be cleared by the read status command
+• RGUR: this bit is always set together with RGIT; both the nIRQ pin and the status bit remain active until the transmitter and
+the TX latch is switched off.
+• FFOV: this bit is always set together with FFIT; it can be cleared by the status read command, but the FFIT bit and hence the
+nIRQ pin will remain active until the FIFO is read fully, the receiver is switched off, or the RX FIFO is switched off.
+• WKUP: both the nIRQ pin and status bit can be cleared by the read status command
+• EXT: both the nIRQ pin and status bit follow the level of the nINT pin
+• LBD: the nIRQ pin can be released by the reading the status, but the status bit will remain active while the VDD is below the
+threshold.
+RFM12B
+29
+The best practice in interrupt handling is to start with a status read when interrupt occurs, and then make a decision based on the
+status byte. It is very important to mention that any interrupt can “wake-up” the EZradio chip from sleep mode. This means that the
+crystal oscillator starts to supply clock signal to the microcontroller even if the microcontroller has its own clock source. Also, the
+RFM12B will not go to low current sleep mode if any interrupt remains active regardless to the state of the ex (enable crystal
+oscillator) bit in the Power Management Command. This way the microcontroller always can have clock signal to process the
+interrupt. To prevent high current consumption and this way short battery life, it is strongly advised to process and clear every
+interrupt before going to sleep mode. All unnecessary functions should be turned off to avoid unwanted interrupts. Before freezing
+the microcontroller code, a thorough testing must be performed in order to make sure that all interrupt sources are handled before
+putting the radio device to low power consumption sleep mode. If the dc bit is set in the Power Management Command, then only
+the ex bit controls the crystal oscillator (supposing that both the er and et bits are cleared), the interrupts have no effect on it.
+TX REGISTER BUFFERED DATA TRANSMISSION
+In this operating mode (enabled by bit el, in the Configuration Setting Command) the TX data is clocked into one of the two
+8-bit data registers. The transmitter starts to send out the data from the first register (with the given bit rate) when bit et is set with
+the Power Management Command. The initial value of the data registers (AAh) can be used to generate preamble. During this
+mode, the SDO pin can be monitored to check whether the register is ready (SDO is high) to receive the next byte from the
+microcontroller.
+TX register simplified block diagram (before transmit)
+TX register simplified block diagram (during transmit)
+RFM12B
+30
+Typical TX register usage
+Enabling the Transmitter preloads the TX
+latch with 0xAAAA
+Do not switch the et off here, because the
+TX byte1 is not transmitted out only
+stored into the internal register!
+SPI commands
+(nSEL, SCK, SDI)
+Conf. Set.
+el = 1
+Power Man
+et = 1
+TX latch wr
+TX byte1
+TX latch wr
+Dummy
+TX byte
+Power Man
+et = 0
+Conf. Set.
+el = 0
+et bit
+(enable transmitter)
+enable
+Synthesizer / PA
+Synt. PA
+Ttx_XTAL_ON*
+TX data 0xAA 0xAA TX byte1
+nIRQ
+Fraction of the
+Dummy byte
+SDO**
+Notes:
+*Ttx_XTAL_ON is the start-up time of the PLL + PA with running crystal oscillator
+** SDO is tri-state if nSEL is logic high.
+Note: The content of the data registers are initialized by clearing bit et.
+A complete transmit sequence should be performed as follows:
+a. Enable the TX register by setting the el bit to 1 (Configuration Setting Command)
+b. The TX register automatically filled out with 0xAAAA, which can be used to generate preamble.
+c. Enable the transmitter by setting the et bit (Power Management Command)
+d. The synthesizer and the PLL turns on, calibrates itself then the power amplifier automatically enabled
+e. The TX data transmission starts
+f. When the transmission of the byte completed, the nIRQ pin goes high, the SDO pin goes low at the same time. The nIRQ
+pulse shows that the first 8 bits (the first byte, by default 0xAA) has transmitted. There are still 8 bits in the transmit
+register.
+g. The microcontroller recognizes the interrupt and writes a data byte to the TX register
+h. Repeat f. - g. until the last data byte reached
+i. Using the same method, transmit a dummy byte. The value of this dummy byte can be anything.
+j. The next high to low transition on the nIRQ line (or low to high on the SDO pin) shows that the transmission of the data
+bytes ended. The dummy byte is still in the TX latch.
+k. Turn off the transmitter by setting the et bit to 0. This event will probably happen while the dummy byte is being
+transmitted. Since the dummy byte contains no useful information, this corruption will cause no problems.
+l. Clearing the el bit clears the Register Underrun interrupt; the nIRQ pin goes high, the SDO low.
+It is possible to perform this sequence without sending a dummy byte (step i.) but after loading the last data byte to the transmit
+register the PA turn off should be delayed for at least 16 bits time. The clock source of the microcontroller (if the clock is not supplied
+by the RFM12B) should be stable enough over temperature and voltage to ensure this minimum delay under all
+operating circumstances.
+When the dummy byte is used, the whole process is driven by interrupts. Changing the TX data rate has no effect on the algorithm
+and no accurate delay measurement is needed.
+RFM12B
+31
+RX FIFO BUFFERED DATA READ
+In this operating mode, incoming data are clocked into a 16-bit FIFO buffer. The receiver starts to fill up the FIFO when the Valid Data
+Indicator (VDI) bit and the synchron pattern recognition circuit indicates potentially real incoming data. This prevents the FIFO from
+being filled with noise and overloading the external microcontroller.
+Interrupt Controlled Mode:
+The user can define the FIFO IT level (the number of received bits) which will generate the nFFIT when exceeded. The status bits
+report the changed FIFO status in this case.
+Polling Mode:
+When nFFS signal is low the FIFO output is connected directly to the SDO pin and its content can be clocked out by the SCK. Set the
+FIFO IT level to 1. In this case, as long as FFIT indicates received bits in the FIFO, the controller may continue to take the bits away.
+When FFIT goes low, no more bits need to be taken.
+An SPI read command is also available to read out the content of the FIFO (Receiver FIFO Read Command).
+FIFO Read Example with FFIT Polling
+nSEL
+0 1 2 3 4
+SCK
+nFFS
+FIFO read out
+SDO FIFO OUT FO+1 FO+2 FO+3 FO+4
+FFIT
+Note: During FIFO access fSCK cannot be higher than fref /4, where fref is the crystal oscillator frequency. When the duty-cycle of the
+clock signal is not 50% the shorter period of the clock pulse should be at least 2/fref .
+RECOMMENDED PACKET STRUCTURES
+Preamble
+Synchron word
+(Can be network ID)
+Payload CRC
+Minimum length 4 - 8 bits (1010b or 0101b) D4h (programmable) ? 4 bit - 1 byte
+Recommended length 8 -12 bits (e.g. AAh or 55h) 2DD4h (D4 is programmable) ? 2 byte
+RFM12B
+32
+CRYSTAL SELECTION GUIDELINES
+The crystal oscillator of the RFM12B requires a 10 MHz parallel mode crystal. The circuit contains an integrated load capacitor
+in order to minimize the external component count. The internal load capacitance value is programmable from 8.5 pF to 16 pF in
+0.5 pF steps. With appropriate PCB layout, the total load capacitance value can be 10 pF to 20 pF so a variety of crystal types
+can be used.
+When the total load capacitance is not more than 20 pF and a worst case 7 pF shunt capacitance (C 0) value is expected for the
+crystal, the oscillator is able to start up with any crystal having less than 100 ohms ESR (equivalent series loss resistance). However,
+lower C0 and ESR values guarantee faster oscillator startup.
+The crystal frequency is used as the reference of the PLL, which generates the local oscillator frequency (fLO ). Therefore, f LO is
+directly proportional to the crystal frequency. The accuracy requirements for production tolerance, temperature drift and aging can
+thus be determined from the maximum allowable local oscillator frequency error.
+Whenever a low frequency error is essential for the application, it is possible to “pull” the crystal to the accurate frequency by
+changing the load capacitor value. The widest pulling range can be achieved if the nominal required load capacitance of the crystal is
+in the “midrange”, for example 16 pF. The “pull-ability” of the crystal is defined by its motional capacitance and C0.
+Maximum XTAL Tolerances Including Temperature and Aging [ppm]
+Bit Rate: 2.4 kbps
+Deviation [± kHz]
+30 45 60 75 90 105 120
+433 MHz 20 30 50 70 90 100 100
+868 MHz 10 20 25 30 40 50 60
+915 MHz 10 15 25 30 40 50 50
+Bit Rate: 9.6 kbps
+Deviation [± kHz]
+30 45 60 75 90 105 120
+433 MHz 15 30 50 70 80 100 100
+868 MHz 8 15 25 30 40 50 60
+915 MHz 8 15 25 30 40 50 50
+Bit Rate: 38.4 kbps
+Deviation [± kHz]
+30 45 60 75 90 105 120
+433 MHz don't use 5 20 30 50 75 75
+868 MHz don't use 3 10 20 25 30 40
+915 MHz don't use 3 10 15 25 30 40
+Bit Rate: 115.2 kbps
+Deviation [± kHz]
+105 120 135 150 165 180 195
+433 MHz don't use 3 20 30 50 70 80
+868 MHz don't use don't use 10 20 25 35 45
+915 MHz don't use don't use 10 15 25 30 40
+RFM12B
+33
+RX-TX ALIGNMENT PROCEDURES
+RX-TX frequency offset can be caused only by the differences in the actual reference frequency. To minimize these errors it is
+suggested to use the same crystal type and the same PCB layout for the crystal placement on the RX and TX PCBs.
+To verify the possible RX-TX offset it is suggested to measure the CLK output of both chips with a high level of accuracy. Do not
+measure the output at the XTL pin since the measurement process itself will change the reference frequency. Since the carrier
+frequencies are derived from the reference frequency, having identical reference frequencies and nominal frequency settings at the
+TX and RX side there should be no offset if the CLK signals have identical frequencies.
+It is possible to monitor the actual RX-TX offset using the AFC status report included in the status byte of the receiver. By reading out
+the status byte from the receiver, the actual measured offset frequency will be reported. In order to get accurate values the AFC has
+to be disabled during the read by clearing the en bit in the AFC Control Command.
+RFM12B
+34
+RESET MODES
+The chip will enter into reset mode if any of the following conditions are met:
+• Power-on reset: During a power up sequence until the Vdd has reached the correct level and stabilized
+• Power glitch reset: Transients present on the Vdd line
+• Software reset: Special control command received by the chip
+Power-on reset
+After power up the supply voltage starts to rise from 0V. The reset block has an internal ramping voltage reference (reset-ramp
+signal), which is rising at 100mV/ms (typical) rate. The chip remains in reset state while the voltage difference between the actual
+V dd and the internal reset-ramp signal is higher than the reset threshold voltage, which is 600 mV (typical). As long as the Vdd voltage
+is less than 1.6V (typical) the chip stays in reset mode regardless the voltage difference between the Vdd and the internal ramp
+signal.
+The reset event can last up to 100ms supposing that the Vdd reaches 90% its final value within 1ms. During this period, the chip
+does not accept control commands via the serial control interface.
+Power-on reset example:
+Power glitch reset
+The internal reset block has two basic mode of operation: normal and sensitive reset. The default mode is sensitive, which can be
+changed by the appropriate control command (see Related control commands at the end of this section). In normal mode the power
+glitch detection circuit is disabled.
+There can be spikes or glitches on the Vdd line if the supply filtering is not satisfactory or the internal resistance of the power supply
+is too high. In such cases if the sensitive reset is enabled an (unwanted) reset will be generated if the positive going edge of the Vdd
+has a rising rate greater than 100mV/ms and the voltage difference between the internal ramp signal and the Vdd reaches the reset
+threshold voltage (600 mV). Typical case when the battery is weak and due to its increased internal resistance a sudden decrease of
+the current consumption (for example turning off the power amplifier) might lead to an increase in supply voltage. If for some reason
+the sensitive reset cannot be disabled step-by-step decrease of the current consumption (by turning off the different stages one by
+one) can help to avoid this problem.
+Any negative change in the supply voltage will not cause reset event unless the Vdd level reaches the reset threshold voltage (250mV
+in normal mode, 1.6V in sensitive reset mode).
+If the sensitive mode is disabled and the power supply turned off the Vdd must drop below 250mV in order to trigger a power-on reset
+event when the supply voltage is turned back on. If the decoupling capacitors keep their charges for a long time it could happen that
+no reset will be generated upon power-up because the power glitch detector circuit is disabled.
+Note that the reset event reinitializes the internal registers, so the sensitive mode will be enabled again.
+RFM12B
+35
+Sensitive Reset Enabled, Ripple on Vdd:
+Vdd Reset threshold voltage
+(600mV)
+1.6V
+Reset ramp line
+(100mV/ms)
+time
+H
+nRes
+output
+L
+Sensitive reset disabled:
+Vdd
+Reset threshold voltage
+(600mV)
+Reset ramp line
+(100mV/ms)
+250mV
+time
+H
+nRes
+output
+L
+Software reset
+Software reset can be issued by sending the appropriate control command (described at the end of the section) to the chip. The
+result of the command is the same as if power-on reset was occurred but the length of the reset event is much less, 0.25ms typical.
+The software reset works only when the sensitive reset mode is selected.
+Vdd line filtering
+During the reset event (caused by power-on, fast positive spike on the supply line or software reset command), it is very important to
+keep the Vdd line as smooth as possible. Noise or periodic disturbing signal superimposed the supply voltage may prevent the part
+getting out from reset state. To avoid this phenomenon use adequate filtering on the power supply line to keep the level of the
+disturbing signal below 100mV p-p in the DC – 50kHz range for 200ms from Vdd ramp start.. Typical example when a switch-mode
+regulator is used to supply the radio, switching noise may be present on the Vdd line. Follow the manufacturer’s recommendations
+how to decrease the ripple of the regulator IC and/or how to shift the switching frequency.
+Related control commands
+FIFO and Reset Mode Command
+Setting bit<0> to high will change the reset mode to normal from the default sensitive.
+SW Reset Command
+Issuing FE00h command will trigger software reset (sensitive reset mode must be enabled). See the Wake-up Timer
+Command.
+RFM12B
+36
+op dd
+= Voc
+TYPICAL PERFORMANCE CHARACTERISTICS
+Channel Selectivity and Blocking:
+90
+80
+70
+60
+50
+40
+30
+20 434 MHz
+868 MHz
+10 ETSI
+Note:
+0
+0 1 2 3 4 5 6 7 8 9 10 11 12
+CW interferer offset from carrier [MHz]
+• LNA gain maximum, filter bandwidth 67 kHz, data rate 9.6 kbps, AFC switched off, FSK deviation ± 45 kHz, Vdd = 2.7 V
+• Measured according to the descriptions in the ETSI Standard EN 300 220-1 v2.1.1 (2006-01 Final Draft), section 9
+• The ETSI limit given in the figure is drawn by taking -106dBm at 9.6kbps typical sensitivity into account, and corresponds to
+receiver class 2 requirements (section 4.1.1)
+Phase Noise Performance in the 433, 868 and 915 MHz Bands:
+433 MHz
+868 MHz
+915 MHz
+(Measured under typical conditions: T = 27 o
+C; V = 2.7 V)
+RFM12B
+37
+BER Curves in 433 MHz Band:
+1
+10-1
+10-2
+10-3
+10-4
+10-5
+10-6
+-120 -115 -110 -105 -100 -95 -90
+BER Curves in 868 MHz Band:
+1.2k
+2.4k
+4.8k
+9.6k
+19.2k
+38.4k
+57.6k
+115.2k
+1
+10-1
+10-2
+10-3
+10-4
+10-5
+10-6
+-115 -110 -105 -100 -95 -90 -85
+1.2k
+2.4k
+4.8k
+9.6k
+19.2k
+38.4k
+57.6k
+115.2k
+The table below shows the optimal receiver baseband bandwidth (BW) and transmitter deviation frequency (δf FSK ) settings for
+different data-rates supposing no transmit receive offset frequency. If TX/RX offset (for example due to crystal tolerances) have to be
+taken into account, increase the BW accordingly.
+1.2 kbps 2.4 kbps 4.8 kbps 9.6 kbps 19.2 kbps 38.4 kbps 57.6 kbps 115.2 kbps
+BW=67 kHz
+δfFSK =45 kHz
+BW=67 kHz
+δfFSK =45 kHz
+BW=67 kHz
+δfFSK =45kHz
+BW=67 kHz
+δfFSK =45 kHz
+BW=67 kHz
+δfFSK =45 kHz
+BW=134 kHz
+δfFSK =90 kHz
+BW=134 kHz
+δfFSK =90 kHz
+BW=200 kHz
+δfFSK =120 kHz
+RFM12B
+38
+dBmdBm
+Receiver Sensitivity over Ambient Temperature (433 MHz, 2.4 kbps, δ fFSK: 45 kHz, BW: 67 kHz):
+-100
+434 MHz
+-103
+-106
+-109
+2.2V
+2.7V
+3.3V
+3.8V
+-112
+-115
+-50 -25 0 25 50 75 100
+Celsius
+Receiver Sensitivity over Ambient Temperature (868 MHz, 2.4 kbps, δ fFSK: 45 kHz, BW: 67 kHz):
+868 MHz
+-100
+-103
+-106
+-109
+2.2V
+2.7V
+3.3V
+3.8V
+-112
+-115
+-50 -25 0 25 50 75 100
+Celsius
+RFM12B
+39
+PACKAGE INFORMATION
+(Units  in mm)
+SMD PACKAGE（S1）
+RFM12B
+40
+SMD PACKAGE（S2）
+DIP PACKAGE（D）
+RFM12B
+45
+Module Model Definition
+model=module‐operation_band‐package_type 
+RFM12B – 433‐D 
+ 
+                   
+ 
+module type     operation band       Package 
+example：1，RFM12B module at 433MHz band, DIP : RFM12B‐433‐D。 
+          2，RFM12B module at 868MHZ band, SMD, thickness at 4.2mm: RFM12B‐868‐S1。 
+ 
+ 
+ 
+HOPE MICROELECTRONICS CO.,LTD
+Add:4/F, Block B3, East Industrial Area,
+Huaqiaocheng, Shenzhen, Guangdong, China
+Tel: 86-755-82973805
+Fax: 86-755-82973550
+Email: sales@hoperf.com
+trade@hoperf.com
+Website: http://www.hoperf.com
+http://hoperf.en.alibaba.com
+This document may contain preliminary information and is subject to change by
+Hope Microelectronics without notice. Hope Microelectronics assumes no
+responsibility or liability for any use of the information contained herein.
+Nothing in this document shall operate as an express or implied license or
+indemnity under the intellectual property rights of Hope Microelectronics or third
+parties. The products described in this document are not intended for use in
+implantation or other direct life support applications where malfunction may
+result in the direct physical harm or injury to persons. NO WARRANTIES OF
+ANY KIND, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MECHANTABILITY OR FITNESS FOR AARTICULAR
+PURPOSE, ARE OFFERED IN THIS DOCUMENT.
+©2006, HOPE MICROELECTRONICS CO.,LTD. All rights reserved.
+ 
+ 
+ 
