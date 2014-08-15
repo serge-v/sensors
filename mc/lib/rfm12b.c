@@ -3,7 +3,9 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <string.h>
 #include "rfm12b.h"
+#include "rfm12b_defs.h"
 
 #define RF12_SELECT   (SELECT_PORT &= ~_BV(SELECT_PIN))
 #define RF12_UNSELECT (SELECT_PORT |= _BV(SELECT_PIN))
@@ -157,7 +159,7 @@ rx_interrupt(void)
 	else if (sidx == 2)
 	{
 		rf12_len = c;
-		if (rf12_len == 0 || rf12_len >= BUF_SIZE)
+		if (rf12_len == 0 || rf12_len >= (BUF_SIZE-5))
 		{
 			rf12_len = 0;
 			rf12_state = RX_DONE_OVERFLOW;
@@ -523,8 +525,6 @@ rf12_reset_fifo()
 	rf12_cmd(RF_FIFO, 0x83); // set ef bit
 }
 
-#include "rfm12b_defs.h"
-
 void
 rf12_setup(void)
 {
@@ -570,6 +570,7 @@ rf12_rx_on()
 	sidx = 0;
 	rf12_len = 0;
 	rf12_node = 0;
+	memset(rf12_packet, 0, BUF_SIZE);
 	rf12_state = RX_ON;
 #if defined(__AVR_ATmega328P__)
 	enable_interrupt(rx_interrupt);
