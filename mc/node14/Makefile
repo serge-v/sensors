@@ -1,5 +1,5 @@
-MCU = attiny85
-F_CPU = 1000000
+MCU = atmega328p
+F_CPU = 16000000
 
 PORT = /dev/ttyACM0
 

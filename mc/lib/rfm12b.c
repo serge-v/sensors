@@ -355,19 +355,33 @@ uint8_t rf12_wait_rx()
 
 uint8_t rf12_read_rx(void)
 {
+	if (rf12_state >= RX_DONE_OK)
+		return rf12_state;
+
 	if (sidx == 0)
 		rf12_state = RX_IN_PROGRESS;
 
 	uint8_t c = rf12_cmd(0xB0, 0x00);
+
+	if (c == 0)
+		return rf12_state; 
+
 	rf12_rx_buf[sidx++] = c;
 
-	if (sidx == 2)
-		rf12_len = c;
-
-	if (rf12_len >= BUF_SIZE)
+	if (sidx == 1)
 	{
-		rf12_state = RX_DONE_OVERFLOW;
-		rf12_len = BUF_SIZE;
+		rf12_node = c;
+	}
+	else if(sidx == 2)
+	{
+		rf12_len = c;
+		if (rf12_len == 0 || rf12_len >= (BUF_SIZE-5))
+		{
+			rf12_len = 0;
+			rf12_state = RX_DONE_OVERFLOW;
+			rf12_rx_off();
+		}
+		return rf12_state;
 	}
 
 	if (sidx == rf12_len + 4)

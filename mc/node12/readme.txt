@@ -1,3 +1,18 @@
+node12
+======
+
+ATTiny and RFM12B.
+Temperature sensor using internal temperature sensor
+on ADC4.
+Transmits temperature every 16 seconds.
+After transmit listens for 2 seconds for calibration command.
+
+Features
+--------
+ - NIRQ is not used. Spinning is using on status MSB bit.
+ - Debugging software serial output on PB3.
+
+
 Attiny85 and RFM12BS on breadboard
 ==================================
 

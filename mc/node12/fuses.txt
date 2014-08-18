@@ -1,0 +1,4 @@
+avrdude -p attiny85 -P /dev/ttyACM0 -c stk500v1 -b 19200 -U lfuse:r:-:h -U hfuse:r:-:h -U efuse:r:-:h -U lock:r:-:h
+0x62
+0xdf
+0xff

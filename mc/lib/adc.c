@@ -12,8 +12,8 @@ Ref: ATTiny85 datasheet p140 (17.13.2), p137 (17.12)
 #define TEMPERATURE_ADJUSTMENT -13
 #define EXTREMES_RATIO 5
 
-int readings[TEMPERATURE_SAMPLES];
-int offset = 0;
+static int readings[TEMPERATURE_SAMPLES];
+static int offset = 0;
 
 static int
 read_raw(void)

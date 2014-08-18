@@ -144,7 +144,8 @@ loop(void)
 	if (serial_available())
 		handle_serial();
 
-	if (sts.tx_enabled && (rf12_state <= RX_ON) && ((timer0_ms() - last_send) > interval))
+	if (sts.tx_enabled && (rf12_state <= RX_ON) &&
+	   ((timer0_ms() - last_send) > interval))
 	{
 		if (sts.rx_enabled)
 			rf12_rx_off();
@@ -167,7 +168,9 @@ loop(void)
 	if (rf12_state >= RX_DONE_OK)
 	{
 		if (sts.debug)
-			printf("%d  rx_state: %d, len: %d\n", rf12_node, rf12_state, rf12_len);
+			printf("%d  rx_state: %d, len: %d\n",
+				rf12_node, rf12_state, rf12_len);
+
 		if (rf12_state == RX_DONE_OK)
 		{
 			rf12_data[rf12_len] = 0;

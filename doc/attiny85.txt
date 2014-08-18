@@ -951,14 +951,14 @@ is set.
 
 
 5.2   SRAM Data Memory
-      Figure 5-2 shows how the ATtiny25/45/85 SRAM Memory is organized.
-      The lower 224/352/607 Data memory locations address both the Register File, the I/O memory and the internal
-      data SRAM. The first 32 locations address the Register File, the next 64 locations the standard I/O memory, and
-      the last 128/256/512 locations address the internal data SRAM.
-      The five different addressing modes for the Data memory cover: Direct, Indirect with Displacement, Indirect, Indi-
-      rect with Pre-decrement, and Indirect with Post-increment. In the Register File, registers R26 to R31 feature the
-      indirect addressing pointer registers.
-      The direct addressing reaches the entire data space.
+      
+Figure 5-2 shows how the ATtiny25/45/85 SRAM Memory is organized.
+
+The lower 224/352/607 Data memory locations address both the Register File, the I/O memory and the internal data SRAM. The first 32 locations address the Register File, the next 64 locations the standard I/O memory, and the last 128/256/512 locations address the internal data SRAM.
+
+The five different addressing modes for the Data memory cover: Direct, Indirect with Displacement, Indirect, Indirect with Pre-decrement, and Indirect with Post-increment. In the Register File, registers R26 to R31 feature the indirect addressing pointer registers.
+
+The direct addressing reaches the entire data space.
       The Indirect with Displacement mode reaches 63 address locations from the base address given by the Y- or Z-
       register.
       When using register indirect addressing modes with automatic pre-decrement and post-increment, the address
