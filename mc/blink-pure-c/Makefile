@@ -1,10 +1,7 @@
 MCU = attiny84
 F_CPU = 1000000
 
-all: led.hex tsbprog
-
-tsbprog:
-	gcc tsbprog.c -o tsbprog
+all: led.hex
 
 main.o: main.c
 	avr-gcc -I../lib -Os -DF_CPU=$(F_CPU) -mmcu=$(MCU) -c -o main.o main.c
@@ -27,3 +24,6 @@ burn: led.hex
 
 burn_bootloader:
 	avrdude -c stk500v1 -p $(MCU) -P /dev/ttyACM1 -b 19200 -U flash:w:tsb_tn84_b1b0_20131023.hex
+
+clean:
+	rm *.o led.hex led.elf
