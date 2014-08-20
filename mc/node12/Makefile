@@ -24,19 +24,9 @@ UPLOAD_RATE = 19200
 
 MAKEFILE = Makefile
 
-DEBUG = stabs
-OPT = s
+#CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 
-# Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
-
-# Place -I options here
-
-CSTANDARD = -std=gnu99 -Wstrict-prototypes
-CWARN = -Wall
-CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-
-CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
+CFLAGS = -DF_CPU=$(F_CPU) -I../lib -Os -Wall -std=gnu99 -Wstrict-prototypes
 LDFLAGS = -Wl,--gc-sections -ffunction-sections
 
 # Program settings
