@@ -2,8 +2,8 @@ node7
 =====
 
 Central node based on Raspberry PI and RFM12B.
-Receive all sensors and transmits the data to the Xively.
-Transmits calibrartion commands for the sensors.
+Receives the data from all sensors and transmits the data to the Xively.
+Transmits calibration commands to the sensors.
 
 Credits
 =======
