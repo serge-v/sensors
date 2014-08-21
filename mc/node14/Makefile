@@ -1,5 +1,5 @@
-MCU = attiny85
-F_CPU = 1000000
+MCU = atmega328p
+F_CPU = 16000000
 
 PORT = /dev/ttyACM0
 
@@ -24,9 +24,19 @@ UPLOAD_RATE = 19200
 
 MAKEFILE = Makefile
 
-#CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+DEBUG = stabs
+OPT = s
 
-CFLAGS = -DF_CPU=$(F_CPU) -I../lib -Os -Wall -std=gnu99 -Wstrict-prototypes
+# Place -D or -U options here
+CDEFS = -DF_CPU=$(F_CPU) -DARDUINO=100
+
+# Place -I options here
+
+CSTANDARD = -std=gnu99 -Wstrict-prototypes
+CWARN = -Wall
+CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+
+CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
 LDFLAGS = -Wl,--gc-sections -ffunction-sections
 
 # Program settings

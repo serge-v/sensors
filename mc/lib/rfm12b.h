@@ -39,14 +39,14 @@ extern "C" {
 
 enum rf12_state
 {
-	IDLE,
-	TX_IN_PROGRESS,
-	TX_DONE,
-	RX_ON,
-	RX_IN_PROGRESS,
-	RX_DONE_OK,
-	RX_DONE_OVERFLOW,
-	RX_DONE_BADCRC
+	IDLE = 0,
+	TX_IN_PROGRESS = 1,
+	TX_DONE = 2,
+	RX_ON = 3,
+	RX_IN_PROGRESS = 4,
+	RX_DONE_OK = 5,
+	RX_DONE_OVERFLOW = 6,
+	RX_DONE_BADCRC = 7
 };
 
 void rf12_initialize(uint8_t id, uint8_t group);

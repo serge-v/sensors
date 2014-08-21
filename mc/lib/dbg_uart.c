@@ -2,15 +2,17 @@
 #include "basic_serial.h"
 #include <stdio.h>
 
-static void uart_putchar(char c, FILE *stream)
+static int
+uart_putchar(char c, FILE *stream)
 {
 	if (c == '\n')
 		uart_putchar('\r', stream);
 	TxByte(c);
-
+	return 0;
 }
 
-char uart_getchar(FILE *stream)
+static int
+uart_getchar(FILE *stream)
 {
 	return RxByte();
 }
