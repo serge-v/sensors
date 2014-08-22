@@ -68,9 +68,10 @@ struct rfm12_device {
 };
 
 static struct rfm12_device rfm12 = {
-//	.devname = RF12_TESTS_DEV,
-	.devname = "test_fifo",
-	.jee_id = JEENODE_ID
+	.devname = RF12_TESTS_DEV,
+//	.devname = "test_fifo",
+	.jee_id = JEENODE_ID,
+	.send_ack = 0,
 };
 
 static int
@@ -95,7 +96,7 @@ init(struct rfm12_device* d)
 		fprintf(stderr, "failed to set non-blocking I/O on %s: %s.\n",
 		       d->devname, strerror(errno));
 		close(d->fd);
-		return 1;
+		return -1;
 	}
 	
 	printf("successfully opened %s as fd %i.\n", d->devname, d->fd);
@@ -106,18 +107,25 @@ init(struct rfm12_device* d)
 	ioctl_err |= ioctl(d->fd, RFM12B_IOCTL_GET_BAND_ID, &d->band_id);
 	ioctl_err |= ioctl(d->fd, RFM12B_IOCTL_GET_BIT_RATE, &d->bit_rate);
 	
-	printf("group_id: %d, band_id: %d, bit_rate: 0x%0X, jee_id: %d\n", d->group_id, d->band_id, d->bit_rate, d->jee_id);
-
-	// we also want to send ACK packets automatically
-
 	ioctl_err |= ioctl(d->fd, RFM12B_IOCTL_SET_JEEMODE_AUTOACK, &d->send_ack);
 
 	if (ioctl_err)
 	{
 		close(d->fd);
-		fprintf(stderr, "ioctl() error: %s.\n", strerror(errno));
+		fprintf(stderr, "ioctl() error while setting autoack: %s.\n", strerror(errno));
 		return -1;
 	}
+
+	if (ioctl(d->fd, RFM12B_IOCTL_SET_JEE_ID, &d->jee_id))
+	{
+		close(d->fd);
+		fprintf(stderr, "ioctl() error while setting jeenode id: %s.\n", strerror(errno));
+		return -1;
+	}
+
+	printf("group_id: %d, band_id: %d, bit_rate: 0x%0X, jee_id: %d\n",
+		d->group_id, d->band_id, d->bit_rate, d->jee_id);
+
 
 	return 0;
 }
@@ -188,8 +196,9 @@ process(struct rfm12_device* d, char* obuf, int len)
 	int ipos = 2, jee_addr;
 	jee_addr = RFM12B_JEE_ID_FROM_HDR(obuf[0]);
 
-	if (jee_addr == 12)
+	if (jee_addr == 11)
 	{
+		sleep(1);
 		char buf[RF12_MAX_SLEN + 1];
 		
 		buf[0] = rfm12.jee_id | RFM12B_JEE_HDR_ACK_BIT;
@@ -198,6 +207,7 @@ process(struct rfm12_device* d, char* obuf, int len)
 		buf[ipos++] = '2';
 
 		buf[1] = ipos - 2; // len of payload
+		buf[ipos] = 0;
 
 		send_buffer(d, buf, ipos);
 	}
@@ -270,6 +280,7 @@ main(int argc, char** argv)
 
 				ibuf[0] = rfm12.jee_id | RFM12B_JEE_HDR_ACK_BIT;   // hdr
 				ibuf[1] = ipos - 2;                             // len of payload
+				ibuf[ipos] = 0;
 				len = send_buffer(&rfm12, ibuf, ipos);
 				if (len < 0)
 					return 1;
