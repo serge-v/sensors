@@ -2,6 +2,8 @@ history -s r
 history -s g
 history -s t
 
+xterm-title.sh ttyACM1-in
+
 while [[ 1 ]]; do
 	read -e -p "> " cmd
 	[[ $cmd == "q" ]] && { exit ; }

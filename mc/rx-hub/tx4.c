@@ -144,8 +144,7 @@ loop(void)
 	if (serial_available())
 		handle_serial();
 
-	if (sts.tx_enabled && (rf12_state <= RX_ON) &&
-	   ((timer0_ms() - last_send) > interval))
+	if (sts.tx_enabled && ((timer0_ms() - last_send) > interval))
 	{
 		if (sts.rx_enabled)
 			rf12_rx_off();
@@ -156,14 +155,15 @@ loop(void)
 	
 		printf("%s", s);
 		rf12_send_sync(s, n);
+		printf("m0\n");
 		led_dot();
 		led_dot();
 		last_send = timer0_ms() - 1;
-
+		printf("m1\n");
 		if (sts.rx_enabled)
 			rf12_rx_on();
+		printf("m2\n");
 	}
-
 
 	if (rf12_state >= RX_DONE_OK)
 	{

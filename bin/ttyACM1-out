@@ -1,6 +1,6 @@
 DIR=`dirname "$0"`
 
-xterm-title.sh ttyACM1
+xterm-title.sh ttyACM1-out
 ${DIR}/set-acm1.sh
 
 while [[ 1 ]] ; do

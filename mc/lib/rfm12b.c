@@ -586,10 +586,12 @@ rf12_rx_on()
 	rf12_node = 0;
 	memset(rf12_packet, 0, BUF_SIZE);
 	rf12_state = RX_ON;
+	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
+	uint16_t st = rf12_read_status();
+	printf("rx on. st: %04x\n", st);
 #if defined(__AVR_ATmega328P__)
 	enable_interrupt(rx_interrupt);
 #endif
-	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 }
 
 void
