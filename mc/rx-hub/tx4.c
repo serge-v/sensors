@@ -30,7 +30,7 @@ void setup(void)
 
 	printf("tx4 %s %s\n", __DATE__, __TIME__);
 	timer0_start();
-	
+
 	for (uint8_t i = 0; i < 5; i++)
 	{
 		printf("%lu\n", timer0_ms());
@@ -54,13 +54,15 @@ struct settings
 	uint8_t rx_enabled: 1;
 	uint8_t debug: 1;
 	uint8_t master: 1;
+    uint8_t rx_spin_mode: 1;
 };
 
 struct settings sts = {
 	.auto_start = 1,
 	.tx_enabled = 0,
 	.rx_enabled = 1,
-	.debug = 0
+	.debug = 0,
+    .rx_spin_mode = 0,
 };
 
 static void handle_serial(void)
@@ -90,6 +92,10 @@ static void handle_serial(void)
 	case '2':
 		interval += 1000;
 		printf("interval: %lu\n", interval);
+		break;
+	case 's':
+		sts.rx_spin_mode = !sts.rx_spin_mode;
+		printf("rx spin mode: %d\n", sts.rx_spin_mode);
 		break;
 	case 't':
 		sts.tx_enabled = !sts.tx_enabled;
@@ -127,8 +133,8 @@ print_temperature_sensor(void)
 	}
 	
 	uint16_t sensor_t = strtoul((const char*)&rf12_data[2], NULL, 16);
-	uint16_t humidity = strtoul((const char*)&rf12_data[9], NULL, 16) / 10;
-	
+	int16_t humidity = strtoul((const char*)&rf12_data[9], NULL, 16) / 10;
+
 	int8_t temperature = (sensor_t & 0x7FFF) / 10;
 	if (sensor_t & 0x8000)
 		temperature = -temperature;
@@ -144,8 +150,7 @@ loop(void)
 	if (serial_available())
 		handle_serial();
 
-	if (sts.tx_enabled && (rf12_state <= RX_ON) &&
-	   ((timer0_ms() - last_send) > interval))
+	if (sts.tx_enabled && ((timer0_ms() - last_send) > interval))
 	{
 		if (sts.rx_enabled)
 			rf12_rx_off();
@@ -156,14 +161,15 @@ loop(void)
 	
 		printf("%s", s);
 		rf12_send_sync(s, n);
+		printf("m0\n");
 		led_dot();
 		led_dot();
 		last_send = timer0_ms() - 1;
-
+		printf("m1\n");
 		if (sts.rx_enabled)
 			rf12_rx_on();
+		printf("m2\n");
 	}
-
 
 	if (rf12_state >= RX_DONE_OK)
 	{
