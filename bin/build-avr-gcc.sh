@@ -10,8 +10,8 @@ function atexit()
 
 trap atexit EXIT
 
-VER=4.9.1
-PREFIX=$HOME/local/avr-gcc
+VER=4.9.2
+PREFIX=/opt/avr-gcc
 
 function build_dep()
 {
@@ -34,7 +34,7 @@ function build_deps()
 {
 	pushd ~/srcr
 
-	build_dep ftp://ftp.gmplib.org/pub/gmp-5.0.5/gmp-5.0.5.tar.bz2 \
+	build_dep https://gmplib.org/download/gmp/gmp-5.1.3.tar.bz2 \
 		--prefix=$(pwd)/gcc-deps \
 		--disable-shared
 
@@ -48,7 +48,7 @@ function build_deps()
 		--prefix=$(pwd)/gcc-deps \
 		--with-gmp=$(pwd)/gcc-deps \
 		--with-mpfr=$(pwd)/gcc-deps
-	
+
 	popd
 }
 
@@ -62,11 +62,11 @@ function build_binutils()
 	[[ ! -d $BINUTILS ]] && tar -xf $BINUTILS.tar.gz
 	[[ ! -d binutils-build ]]  && mkdir binutils-build
 	cd binutils-build
-	../$BINUTILS/configure --prefix=$PREFIX --disable-nls --target=avr
+	../$BINUTILS/configure --prefix=$PREFIX --disable-nls --disable-werror --target=avr
 	make
 	make install
 	cd -
-	
+
 	popd
 }
 
@@ -114,10 +114,22 @@ function build_avr_libc()
 	popd
 }
 
-#build_deps
-#build_binutils
-#build_avr_gcc
-#build_avr_libc
+export CC=gcc-4.9
+export CXX=g++-4.9
+export CPP=cpp-4.9
+export LD=gcc-4.9
+
+build_deps
+build_binutils
+build_avr_gcc
+
+export CC=
+export CXX=
+export CPP=
+export LD=
+
+# will use avr-gcc from $PREFIX/bin
+
+build_avr_libc
 
 echo update path with: PATH=\$PATH:$PREFIX/bin
-
