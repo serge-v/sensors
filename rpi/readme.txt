@@ -1,3 +1,12 @@
+Contents
+========
+
+blink           -- RPI gpio and blink tests.
+node7           -- abandoned receiver for RFM12 using rfm12b-linux kernel driver.
+test-cross      -- test cross compiling on Linux PC for RPI.
+tests           -- IRQ, poll, SPI tests.
+
+
 Install Archlinux
 =================
 wget http://archlinuxarm.org/os/ArchLinuxARM-rpi-latest.zip

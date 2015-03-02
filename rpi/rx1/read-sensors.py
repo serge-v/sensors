@@ -1,3 +1,8 @@
+#
+# Calls RFM12 receiver rx2.
+# Transmits received data to Xively account.
+#
+
 #!/usr/bin/python2
 
 import httplib, os, sys

@@ -54,7 +54,7 @@ struct settings
 	uint8_t rx_enabled: 1;
 	uint8_t debug: 1;
 	uint8_t master: 1;
-    uint8_t rx_spin_mode: 1;
+	uint8_t rx_spin_mode: 1;
 };
 
 struct settings sts = {
@@ -62,7 +62,7 @@ struct settings sts = {
 	.tx_enabled = 0,
 	.rx_enabled = 1,
 	.debug = 0,
-    .rx_spin_mode = 0,
+	.rx_spin_mode = 0,
 };
 
 static void handle_serial(void)

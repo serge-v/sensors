@@ -143,7 +143,7 @@ void loop(void)
 			uint8_t n = snprintf(s, 20, "n,%d\n", rf12_state);
 			rf12_send_sync(s, n);
 		}
-		
+
 		rf12_rx_on();
 		return;
 

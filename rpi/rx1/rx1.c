@@ -1,3 +1,9 @@
+/*
+
+old version of receiver for rfm12
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>

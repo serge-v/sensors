@@ -1,3 +1,9 @@
+/*
+
+helper methods for FRM12 transceiver.
+
+*/
+
 #include <stdint.h>
 
 void trx_init();

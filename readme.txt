@@ -16,7 +16,7 @@ mc/node12     Simple ATTiny85 and RFM12B based sensor. Uses internal
               temperature sensor. Transmits temp and humidity
               every 20 sec.
 
-rpi/rx1       Raspberry PI and RFM12B based tranceiver. Receives sensors
+rpi/rx2       Raspberry PI and RFM12B based tranceiver. Receives sensors
               data and uploads it to the xively account.
 
 router        Open home router for incoming connections using UPNP.

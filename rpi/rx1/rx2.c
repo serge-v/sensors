@@ -1,3 +1,14 @@
+/*
+
+Raspbery PI based receiver for rfm12 sensors.
+
+Algorithm:
+1. Pool on GPIO for interrupt pin (NINTQ).
+2. Read data using SPI and bcm library.
+3. Decode and print CSV data.
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>

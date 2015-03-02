@@ -57,7 +57,7 @@ int main (void)
 
 	// led
 	DDRB |= _BV(DDB2); // output
-	
+
 	uint8_t cnt = 0;
 	uint8_t rows = 0;
 

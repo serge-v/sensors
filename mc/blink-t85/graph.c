@@ -52,7 +52,7 @@ int main()
 	printf("                         13 12 11 10  9  8\n");
 	printf("                    7  6  5  4  3  2  1  0\n");
 	
-	if (0)
+	if (1)
 	{
 		print_bin(0x00, 0x00);
 		print_bin(0x00, 0x00);
