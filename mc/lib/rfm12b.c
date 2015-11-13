@@ -391,7 +391,7 @@ uint8_t rf12_read_rx(void)
 		else
 			rf12_state = RX_DONE_BADCRC;
 	}
-	
+
 	return rf12_state;
 }
 
@@ -439,10 +439,10 @@ rf12_send_sync(const char*s, uint8_t n)
 	tx(group);       // sync low byte
 	tx(node_id);     // id
 	tx(n);           // len
-	
+
 	for (uint8_t i = 0; i < n; i++)
 		tx(s[i]);
-	
+
 	tx(crc & 0xFF);  // crc lo
 	tx(crc >> 8);    // crc hi
 //	tx(0);           // dummy byte
@@ -588,7 +588,7 @@ rf12_rx_on()
 	rf12_state = RX_ON;
 	rf12_cmd(RF_PWR_MGMT, RF_PWR_ER|RF_PWR_EBB|RF_PWR_ES | RF_PWR_EX|RF_PWR_EB|RF_PWR_DC);
 	uint16_t st = rf12_read_status();
-	printf("rx on. st: %04x\n", st);
+//	printf("rx on. st: %04x\n", st);
 #if defined(__AVR_ATmega328P__)
 	enable_interrupt(rx_interrupt);
 #endif

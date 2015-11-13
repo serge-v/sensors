@@ -4,6 +4,7 @@ F_CPU = 1000000
 all: led.hex
 
 main.o: main.c
+	avr-cpp -I../lib -Os -DF_CPU=$(F_CPU) -mmcu=$(MCU) main.c >main_prep.c
 	avr-gcc -I../lib -Os -DF_CPU=$(F_CPU) -mmcu=$(MCU) -c -o main.o main.c
 
 dbg_uart.o: ../lib/dbg_uart.c

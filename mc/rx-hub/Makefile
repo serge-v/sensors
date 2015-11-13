@@ -1,7 +1,7 @@
 MCU = atmega328p
 F_CPU = 16000000
 
-PORT1 = /dev/ttyACM0
+PORT1 = /dev/tty.usbmodem1411
 PORT2 = /dev/ttyACM1
 
 LIB = ../lib
@@ -15,7 +15,7 @@ SRC = tx4.c \
     $(LIB)/debug.c  \
     $(LIB)/timer.c
 
-CXXSRC = 
+CXXSRC =
 
 FORMAT = ihex
 UPLOAD_RATE = 115200

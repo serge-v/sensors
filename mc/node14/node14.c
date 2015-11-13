@@ -19,7 +19,7 @@ temperature transmitter using internal ATTint85 sensor
 
 #define DEBUG
 
-const uint8_t node_id = 12;
+const uint8_t node_id = 14;
 const uint8_t group_id = 212;
 static uint8_t status = 0;
 volatile uint8_t f_wdt = 1;

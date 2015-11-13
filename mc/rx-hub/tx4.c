@@ -13,14 +13,16 @@
 
 FILE serial_stream = FDEV_SETUP_STREAM(serial_putchar, serial_getchar, _FDEV_SETUP_RW);
 
-static void blink_start(void)
+static void
+blink_start(void)
 {
 	led_dash();
 	led_dot();
 	led_dot();
 }
 
-void setup(void)
+static void
+setup(void)
 {
 	led_init();
 	blink_start();
@@ -44,8 +46,8 @@ void setup(void)
 	printf("i3\n");
 }
 
-unsigned long last_send = 0;
-unsigned long interval = 10000;
+static unsigned long last_send = 0;
+static unsigned long interval = 10000;
 
 struct settings
 {
@@ -65,7 +67,8 @@ struct settings sts = {
 	.rx_spin_mode = 0,
 };
 
-static void handle_serial(void)
+static void
+handle_serial(void)
 {
 	sts.auto_start = 0;
 
@@ -131,20 +134,20 @@ print_temperature_sensor(void)
 		printf("%d  badrec: %s\n", rf12_node, rf12_data);
 		return;
 	}
-	
+
 	uint16_t sensor_t = strtoul((const char*)&rf12_data[2], NULL, 16);
 	int16_t humidity = strtoul((const char*)&rf12_data[9], NULL, 16) / 10;
 
 	int8_t temperature = (sensor_t & 0x7FFF) / 10;
 	if (sensor_t & 0x8000)
 		temperature = -temperature;
-	
+
 	int8_t temperatureF = (float)temperature * 9.0 / 5.0 + 32;
 
 	printf("%d  %dC %dF RH %d%%\n", rf12_node, temperature, temperatureF, humidity);
 }
 
-void
+static void
 loop(void)
 {
 	if (serial_available())
@@ -158,7 +161,7 @@ loop(void)
 		char s[30];
 		unsigned long time = timer0_ms();
 		uint8_t n = snprintf(s, 20, "%d,t,%lu\n", node_id, time);
-	
+
 		printf("%s", s);
 		rf12_send_sync(s, n);
 		printf("m0\n");
@@ -184,7 +187,7 @@ loop(void)
 				print_temperature_sensor();
 			else
 				printf("%d  %s\n", rf12_node, rf12_data);
-			
+
 			rf12_state = IDLE;
 		}
 		else if (sts.debug)

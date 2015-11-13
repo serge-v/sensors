@@ -45,7 +45,8 @@ void setup_watchdog(int ii)
 }
 
 
-void setup(void)
+static void
+setup(void)
 {
 	wdt_disable();
 	dbg_uart_init();
@@ -77,7 +78,8 @@ static struct rht03_status sensor = {
 
 uint8_t dbgstatus = 0;
 
-static void send_status(void)
+static void
+send_status(void)
 {
 #ifdef RECEIVER_CODE
 	rf12_rx_off();
@@ -106,7 +108,8 @@ static void send_status(void)
 volatile uint8_t f_wdt = 1;
 uint8_t loop_count = 0;
 
-void loop(void)
+static void
+loop(void)
 {
 	if (f_wdt != 1)
 		return;
@@ -177,7 +180,8 @@ int main(void)
 		loop();
 }
 
-void system_sleep()
+static void
+system_sleep()
 {
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN); // sleep mode is set here
 	sleep_enable();
@@ -190,4 +194,3 @@ ISR(WDT_vect)
 {
 	f_wdt = 1;  // set global flag
 }
-
