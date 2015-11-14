@@ -61,6 +61,7 @@ growfs_enable="YES"
 wlans_urtwn0="wlan0"
 ifconfig_wlan0="WPA DHCP"
 ntpd_enable="YES"
+ntpd_sync_on_start="YES"
 
 # cat /etc/wpa_supplicant.conf
 network={
